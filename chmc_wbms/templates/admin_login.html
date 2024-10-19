@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- If you're using CSS -->
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="input-field">
+                <label for="id_username">Email/Username:</label>
+                {{ form.username }}  <!-- This is the username/email input -->
+            </div>
+            <div class="input-field">
+                <label for="id_password">Password:</label>
+                {{ form.password }}  <!-- This is the password input -->
+            </div>
+            <div class="login-button">
+                <button type="submit">Login</button>
+            </div>
+            <div class="admin-login">
+                <a href="{% url 'login' %}">Employee Login</a>
+            </div>
+        </form>
+
+    </div>
+</body>
+</html>

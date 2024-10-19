@@ -1,0 +1,110 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">  <!-- Assuming you have a CSS file for styling -->
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+            <li><a href="{% url 'admin_dashboard' %}">Home</a></li>
+            <!-- Add more sidebar items as needed -->
+        </ul>
+    </div>
+
+    <div class="content">
+        <h1>Admin Dashboard</h1>
+        <!-- <div class="stats">
+            <h3>Today's Income: ${{ daily_income }}</h3>
+            <h3>This Week's Income: ${{ weekly_income }}</h3>
+            <h3>This Month's Income: ${{ monthly_income }}</h3>
+            <h3>Today Patients Attended: {{ today_patients }}</h3>
+            <h3>This Week Patients Attended: {{ weekly_patients }}</h3>
+        </div>
+
+        <h2>Today's Appointments</h2>
+        <ul>
+            {% for appointment in today_appointments %}
+                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} at {{ appointment.date|date:"H:i" }}</li>
+            {% empty %}
+                <li>No appointments today.</li>
+            {% endfor %}
+        </ul>
+        
+        <h2>All Appointments</h2>
+        <ul>
+            {% for appointment in all_appointments %}
+                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} on {{ appointment.date|date:"d M Y H:i" }}</li>
+            {% empty %}
+                <li>No appointments found.</li>
+            {% endfor %}
+        </ul> -->
+    </div>
+
+    <style>
+        /* Inline basic styling for dashboard */
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            height: 100vh;
+        }
+
+        .sidebar h2 {
+            color: white;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 20px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        .stats {
+            margin-bottom: 20px;
+        }
+
+        .stats h3 {
+            margin: 10px 0;
+        }
+
+        h2 {
+            margin-top: 30px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul li {
+            margin: 10px 0;
+        }
+    </style>
+</body>
+</html>
