@@ -7,7 +7,7 @@ from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
 from datetime import timedelta
 
-def login_view(request):
+def employee_login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -25,7 +25,7 @@ def login_view(request):
     else:
         form = AuthenticationForm()
 
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'employee_login.html', {'form': form})
 
 def admin_login_view(request):
     form = AuthenticationForm(request, data=request.POST or None)
