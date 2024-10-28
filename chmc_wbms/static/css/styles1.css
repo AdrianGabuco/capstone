@@ -1,0 +1,25 @@
+:root{
+/*-----Color Variables-----*/
+    --fullblack: #000000;
+    --black_900_33: #00000033;
+    --balck_900_7f: #0000007f;
+    --blue_a100: #99b4ff;
+    --blue_a100_6b: #99b4ff6b;
+    --gray_200: #eaeaea;
+    --red_a400: #ed1b2e;
+
+/*-----Shadow Variables-----*/
+
+    --shadow-xs: 0 0 100px 25px #0000007f;
+    --shadow-sm: 0 7px 4px 0 #00000033;
+
+/*-----Border Radius Variables-----*/
+
+    --radius-xs: 24px;
+    --radius-sm: 30px;
+    --radius-md: 36px;
+
+/*-----Spacing Variables-----*/
+
+    --space-xs: 14px;
+}
