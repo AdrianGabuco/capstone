@@ -23,5 +23,5 @@ urlpatterns = [
     path('', employee_login_view, name='employee_login'),
     path('admin_login/', admin_login_view, name='admin_login'),
     path('admin_dashboard/', admin_dashboard_view, name='admin_dashboard'),
-    path('logout/', admin_logout_view, name='logout'),
+    path('logout/', admin_logout_view, name='admin_logout'),
 ]
