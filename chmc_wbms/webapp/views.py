@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.db.models import Sum, Count
 from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
@@ -25,7 +25,7 @@ def employee_login_view(request):
     else:
         form = AuthenticationForm()
 
-    return render(request, 'employee_login.html', {'form': form})
+    return render(request, 'employee/employee_login.html', {'form': form})
 
 def admin_login_view(request):
     form = AuthenticationForm(request, data=request.POST or None)
@@ -39,13 +39,7 @@ def admin_login_view(request):
         else:
             form.add_error(None, "You are not authorized to access this page.")
 
-    return render(request, 'admin_login.html', {'form': form})
-
-@user_passes_test(lambda u: u.is_superuser)
-def admin_dashboard_view(request):
-    return render(request, 'admin_dashboard.html')
-
-
+    return render(request, 'admin/admin_login.html', {'form': form})
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard_view(request):
@@ -82,4 +76,8 @@ def admin_dashboard_view(request):
     #     'all_appointments': all_appointments,  # All appointments
     # }
 
-    return render(request, 'admin_dashboard.html')
+    return render(request, 'admin/admin_dashboard.html')
+
+def admin_logout_view(request):
+    logout(request)  # This logs out the user
+    return redirect('admin_login') 
