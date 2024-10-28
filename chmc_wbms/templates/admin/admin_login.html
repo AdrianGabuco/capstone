@@ -6,9 +6,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/font.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style1.css' %}">  <!-- If you're using CSS -->
+    <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles1.css' %}">  <!-- If you're using CSS -->
 </head>
 <body>
     <div class="login-container">
@@ -22,7 +22,7 @@
             </div>
             <div class="input-field">
                 <label for="id_password">Password:</label>
-                {{ form.password }}  <!-- This is the password input -->
+                {{ form.password }} <!--  This is the password input   -->
             </div>
             <div class="login-button">
                 <button type="submit">Login</button>
