@@ -1,12 +1,13 @@
 :root{
 /*-----Color Variables-----*/
-    --fullblack: #000000;
+    --black_900: #000000;
     --black_900_33: #00000033;
     --balck_900_7f: #0000007f;
     --blue_a100: #99b4ff;
     --blue_a100_6b: #99b4ff6b;
     --gray_200: #eaeaea;
     --red_a400: #ed1b2e;
+    --white_a700: #ffffff;
 
 /*-----Shadow Variables-----*/
 
