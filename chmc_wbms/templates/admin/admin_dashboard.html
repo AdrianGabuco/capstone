@@ -1,21 +1,8 @@
-{% load static %}
-{% include 'admin/admin_navbar.html' %}
-{% include 'admin/admin_sidebar.html' %}
-<!DOCTYPE html>
-<html lang="en">
-    
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">  <!-- Assuming you have a CSS file for styling -->
-</head>
+{% extends 'admin/admin_base.html' %}
 
-<body>
+{% block title %}Product List{% endblock %}
 
-
-
-    <div class="content">
+{% block content %}
         <h1>Admin Dashboard</h1>
         <!-- <div class="stats">
             <h3>Today's Income: ${{ daily_income }}</h3>
@@ -42,67 +29,6 @@
                 <li>No appointments found.</li>
             {% endfor %}
         </ul> -->
-    </div>
 
-    <style>
-        /* Inline basic styling for dashboard */
-        body {
-            display: flex;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
 
-        .sidebar {
-            width: 200px;
-            background-color: #333;
-            color: white;
-            padding: 20px;
-            height: 100vh;
-        }
-
-        .sidebar h2 {
-            color: white;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .sidebar ul li {
-            margin: 20px 0;
-        }
-
-        .sidebar ul li a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .content {
-            flex-grow: 1;
-            padding: 20px;
-        }
-
-        .stats {
-            margin-bottom: 20px;
-        }
-
-        .stats h3 {
-            margin: 10px 0;
-        }
-
-        h2 {
-            margin-top: 30px;
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        ul li {
-            margin: 10px 0;
-        }
-    </style>
-</body>
-</html>
+{% endblock %}
