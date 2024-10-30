@@ -1,7 +1,7 @@
-body {
-    height: 1024px;
+.bg {
+    height: 976px;
+    background-image: url('\image\BG.jpg');
     background-color: var(--white_a700);
-    background-image: url('C:\Users\Asus\Desktop\BSIT 3 - B1 2nd Semester\IT 17 Capstone Project and Research 1 -\Code\capstone\chmc_wbms\static\public\image\BG.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     width: 100%;

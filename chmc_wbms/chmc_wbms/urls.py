@@ -17,7 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from webapp.views import employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view
-
+from django.conf.urls.static import static
+from django.conf import settings
+    
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', employee_login_view, name='employee_login'),

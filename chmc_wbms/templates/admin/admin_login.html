@@ -8,22 +8,58 @@
     <title>Login Page</title>
     <link rel="stylesheet" href="{% static 'css/font.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/styles1.css' %}">  <!-- If you're using CSS -->
 </head>
 <body>
     <div class="bg">
-        <h2>Admin Login</h2>
+        <div class="section">
+            <div class="section_content"> 
+                <div class="section_content_image-column">
+                    <div class="section_content_text-row">
+                        <div class="section_content_text-column">
+                            <img src="C:\Users\Asus\Desktop\BSIT 3 - B1 2nd Semester\IT 17 Capstone Project and Research 1 -\Code\capstone\chmc_wbms\static\public\image/Icon.png" alt="Secondary Logo" class="section_content_image">
+                            <p class="section_content_heading ui text size-textxs">
+                                <span class="section_content_heading-span"> CURE </span>
+                                <span class="section_content_heading-span-1"> 
+                                HEALTH <br /> 
+                                MEDICAL CLINIC <br /> ONLINE SYSTEM
+                                </span>
+                            </p>
+                        </div>
+                        <img src="C:\Users\Asus\Desktop\BSIT 3 - B1 2nd Semester\IT 17 Capstone Project and Research 1 -\Code\capstone\chmc_wbms\static\public\image\img_line_1.svg" alt="DEcorative Line" class="section_content_divider">
+                    </div>
+                </div>
+                <div class="section_form">
+                    <h1 class="section_form_title ui heading size-headings">LOGIN TO YOUR ACCOUNT</h1>
+                    <div class="section_form_fields">
+                        <label class="section_form_input--username ui input gray_200 size-xs fill round">
+                            <input name="Username Field" placeholder="USERNAME" type="text" />
+                        </label>
+                        <label class="section_form_input--password ui input gray_200 size-xs fill round">
+                            <input name="Password Field" placeholder="PASSWORD" type="password" />
+                        </label>
+                        <a href="#" class="forgot-password-link">
+                            <h2 class="ui heading size-headingxs">FORGOT PASSWORD</h2>
+                        </a>
+                        <button class="section_form_button--login ui button blue_a100_6b size-xs fill round">LOGIN</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>        
+        <!-- <h2>Admin Login</h2>
         <form method="POST">
             {% csrf_token %}
             {{ form.non_field_errors }}
             <div class="input-field">
                 <label for="id_username">Email/Username:</label>
-                {{ form.username }}  <!-- This is the username/email input -->
-            </div>
+                {{ form.username }} --> <!-- This is the username/email input -->
+        <!--     </div>
             <div class="input-field">
                 <label for="id_password">Password:</label>
-                {{ form.password }} <!--  This is the password input   -->
-            </div>
+                {{ form.password }} --> <!--  This is the password input   -->
+        <!--     </div>
             <div class="login-button">
                 <button type="submit">Login</button>
             </div>
@@ -31,7 +67,7 @@
                 <a href="{% url 'employee_login' %}">Employee Login</a>
             </div>
         </form>
-
-    </div>
+        </div>
+        </div> -->
 </body>
 </html>

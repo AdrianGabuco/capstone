@@ -11,7 +11,7 @@
     font-style: normal;
     font-family: Roag;
     font-weight: 600;
-    src: url("public\font\ROAG-BOLD.OTF");
+    src: url("font\ROAG-BOLD.OTF");
 }
 
 @font-face {
@@ -19,12 +19,12 @@
     font-style: normal;
     font-family: Object-Sans;
     font-weight: 500;
-    src: url("public\font\OBJECT SANS.OTF");
+    src: url("font\OBJECT SANS.OTF");
 }
 @font-face {
     font-display: swap;
     font-style: normal;
     font-family: Causten-round;
     font-weight: 500;
-    src: url("public\font\CAUSTEN ROUND.OTF");
+    src: url("font\CAUSTEN ROUND.OTF");
 }
