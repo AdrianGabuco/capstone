@@ -1,6 +1,6 @@
 .bg {
     height: 976px;
-    background-image: url(image/BG.jpg);
+    background: url(image/BG.jpg) 50% 0 no-repeat fixed;
     background-color: var(--white_a700);
     background-size: cover;
     background-repeat: no-repeat;
@@ -144,6 +144,7 @@
 
 .forgot-password-link {
     margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .section_form_buttton--login {
