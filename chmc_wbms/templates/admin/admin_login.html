@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
     <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/styles1.css' %}">  <!-- If you're using CSS -->
@@ -39,8 +40,8 @@
                         <label class="section_form_input--password ui input gray_200 size-xs fill round">
                             <input name="Password Field" placeholder="PASSWORD" type="password" />
                         </label>
-                        <a href="#" class="forgot-password-link">
-                            <h2 class="ui heading size-headingxs">FORGOT PASSWORD</h2>
+                        <a href="{% url 'employee_login' %}" class="forgot-password-link">
+                            <h2 class="ui heading size-headingxs">EMPLOYEE LOGIN</h2>
                         </a>
                         <button class="section_form_button--login ui button blue_a100_6b size-xs fill round">LOGIN</button>
                     </div>
