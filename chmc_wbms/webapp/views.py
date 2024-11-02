@@ -27,19 +27,8 @@ def employee_login_view(request):
 
     return render(request, 'employee/employee_login.html', {'form': form})
 
-def admin_login_view(request):
-    form = AuthenticationForm(request, data=request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        username = form.cleaned_data.get('username')
-        password = form.cleaned_data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is not None and user.is_superuser:  # Check if the user is an admin
-            login(request, user)
-            return redirect('admin_dashboard')  # Change to your admin dashboard view
-        else:
-            form.add_error(None, "You are not authorized to access this page.")
 
-    return render(request, 'admin/admin_login.html', {'form': form})
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard_view(request):
