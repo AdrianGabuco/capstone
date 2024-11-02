@@ -1,6 +1,10 @@
 .bg {
     height: 976px;
+<<<<<<< HEAD
     background-image: url('../image/BG.png');
+=======
+    background: url('../image/BG.jpg') 50% 0 no-repeat fixed;
+>>>>>>> b975e474bec2242fc671656100e0610e12b8c84e
     background-color: var(--white_a700);
     background-size: cover;
     background-repeat: no-repeat;
