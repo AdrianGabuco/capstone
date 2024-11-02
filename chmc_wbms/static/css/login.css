@@ -1,6 +1,6 @@
 .bg {
     height: 976px;
-    background: url(image/BG.jpg) 50% 0 no-repeat fixed;
+    background-image: url('../image/BG.png');
     background-color: var(--white_a700);
     background-size: cover;
     background-repeat: no-repeat;
@@ -64,12 +64,14 @@
 }
 
 .section_content_image{
+    margin: auto;
     height: 242px;
     width: 82%;
     object-fit: contain;
 }
 
 .section_content_heading {
+    margin: auto;
     text-align: center;
     font-weight: 600 !important;
     line-height: 42px;
@@ -121,8 +123,10 @@
 
 .section_form_input--username {
     color: var(--black_900_33) !important;
-    padding: var(--space-xs);
-    padding-right: var(--space-xs);
+    padding-top: var(--space-xs);
+    padding-bottom: var(--space-xs);
+    padding-right: 20px;
+    padding-left: 20px;
     background-color: var(--gray_200) !important;
     box-shadow: 0 7px 4px 0 var(--black_900_33) !important;
     width: 92%;

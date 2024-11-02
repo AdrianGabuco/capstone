@@ -72,7 +72,7 @@
 }
 
 .ui.text.size.textxs {
-    font-size: 45px;
+    font-size: 60px;
     font-weight: 400px;
     font-style: normal;
     @media only screen and (max-width: 1050px) {
@@ -85,6 +85,7 @@
 }
 
 .ui.text {
+    font-size: 35px;
     color: var(--black_900);
     font-family: Raog;
 }
