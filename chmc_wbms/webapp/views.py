@@ -7,6 +7,20 @@ from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
 from datetime import timedelta
 
+def admin_login_view(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password')
+        user = authenticate(username=username, password=password)
+        if user is not None and user.is_superuser:  # Check if the user is an admin
+            login(request, user)
+            return redirect('admin_dashboard')  # Change to your admin dashboard view
+        else:
+            form.add_error(None, "You are not authorized to access this page.")
+
+    return render(request, 'admin/admin_login.html', {'form': form})
+
 def employee_login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
