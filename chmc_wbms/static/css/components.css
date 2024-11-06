@@ -28,21 +28,57 @@
     border-radius: var(--radius-xs);
 }
 
+.ui.button.square {
+    border-radius: 0px;
+}
+
 .ui.button.round {
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-4xl);
 }
 
 .ui.button.size-xs {
+    height: 42px;
+    padding-left: 14px;
+    padding-right: 14px;
+    font-size: 20px;
+}
+
+.ui.button.size-sm {
+    height: 44px;
+    font-size: 25px;
+}
+
+.ui.button.size-lg {
     height: 74px;
-    margin: auto;
-    padding-left: 34px;
-    padding-right: 34px;
+    padding-left: var(--space-9xl);
+    padding-right: var(--space-9xl);
     font-size: 35px;
 }
 
-.ui.input.fill.blue_a100_6b {
+.ui.button.fill.blue_a100_6b {
     background-color: var(--blue_a100_6b);
     color: var(--black_900_7f);
+}
+
+.ui.button.fill.blue_a100 {
+    background-color: var(--blue_a100);
+    box-shadow: var(--shadow-md);
+    color: var(--black_900);
+}
+
+.ui.button.outline.blue_a100 {
+    color: var(--black_900);
+    border: 5px solid var(--blue_a100);
+}
+
+.ui.button.fill.indigo_200 {
+    background-color: var(--indigo_200);
+    color: var(--white_a700);
+}
+
+.ui.button.fill.white_a700 {
+    background-color: var(--white_a700);
+    color: var(--black_900);
 }
 
 .ui.button {

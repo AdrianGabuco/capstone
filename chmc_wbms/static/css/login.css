@@ -1,21 +1,17 @@
 .bg {
-    height: 976px;
-<<<<<<< HEAD
-    background-image: url('../image/BG.png');
-=======
-    background: url('../image/BG.jpg') 50% 0 no-repeat fixed;
->>>>>>> b975e474bec2242fc671656100e0610e12b8c84e
+    height: 1024px;
     background-color: var(--white_a700);
+    background-image: url('../image/BG.png');
     background-size: cover;
     background-repeat: no-repeat;
     width: 100%;
     display: flex;
     justify-content: center;
-    align-self: center;
+    align-items: center;
     padding: 186px 56px;
     @media only screen and (max-width: 1050px) {
         height: auto;
-        padding: 20px;        
+        padding: 20px;
     }
 }
 
@@ -29,7 +25,7 @@
     margin-left: auto;
     margin-right: auto;
     padding: 76px 56px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xl);
     @media only screen and (max-width: 1050px) {
         padding: 20px;
     }

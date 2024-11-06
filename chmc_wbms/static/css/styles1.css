@@ -68,23 +68,6 @@
     justify-content: center;
 }
 
-.bg {
-    height: 1024px;
-    padding-top: 186px;
-    padding-bottom: 186px;
-    background-image: url('../image/BG.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    width: 100%;
-    display: flex;
-    padding: 186px 56px;
-    @media only screen and (max-width: 1050px) {
-        height: auto;
-        padding-top: var(--space-4xl);
-        padding-bottom: var(--space-4xl);
-    }
-}
-
 .row-two {
     display: flex;
     justify-content: center;
