@@ -138,7 +138,8 @@
     color: var(--black_900_33) !important;
     margin-top: 32px;
     padding: var(--space-xs);
-    padding-right: var(--space-xs);
+    padding-left: var(--space-4xl);
+    padding-right: var(--space-4xl);
     background-color: var(--gray_200) !important;
     box-shadow: 0 7px 4px 0 var(--black_900_33) !important;
     width: 92%;
@@ -151,7 +152,7 @@
     margin-bottom: 20px;
 }
 
-.section_form_buttton--login {
+.section_form_button--login {
     color: var(--black_900_7f) !important;
     margin-top: 20px;
     margin-right: 108px;

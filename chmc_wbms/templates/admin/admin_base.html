@@ -18,15 +18,22 @@
     <link href="{% static 'assets/css/light-bootstrap-dashboard.css' %} " rel="stylesheet" />
 
     <link href="{% static 'assets/css/demo.css' %}" rel="stylesheet" />
+
+    <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles1.css' %}">  
 </head>
 
 <body>
+    <div class="bg_dashboard">
     <div class="wrapper">
-        <div class="sidebar" data-image="assets/img/sidebar-5.jpg">
+        <!-- <div class="sidebar" data-image="assets/img/sidebar-5.jpg">
             <div class="sidebar-wrapper">
                 {% include 'admin/includes/admin_sidebar.html' %}
             </div>
-        </div>
+        </div> -->
         <div class="main-panel">
             {% include 'admin/includes/admin_navbar.html' %}
             <div class="content">

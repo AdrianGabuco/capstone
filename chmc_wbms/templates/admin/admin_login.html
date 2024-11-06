@@ -35,10 +35,10 @@
                     <h1 class="section_form_title ui heading size-headings">LOGIN TO YOUR ACCOUNT</h1>
                     <div class="section_form_fields">
                         <label class="section_form_input--username ui input gray_200 size-xs fill round">
-                            <input name="Username Field" placeholder="USERNAME" type="text" />
+                            <input name="Username Field" placeholder="username" type="text" />
                         </label>
                         <label class="section_form_input--password ui input gray_200 size-xs fill round">
-                            <input name="Password Field" placeholder="PASSWORD" type="password" />
+                            <input name="Password Field" placeholder="password" type="password" />
                         </label>
                         <a href="{% url 'employee_login' %}" class="forgot-password-link">
                             <h2 class="ui heading size-headingxs">EMPLOYEE LOGIN</h2>
@@ -50,12 +50,7 @@
         </div>
     </div>     
         <!-- <h2>Admin Login</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            <div class="input-field">
-                <label for="id_username">Email/Username:</label>
-                {{ form.username }} --> <!-- This is the username/email input -->
+        --> <!-- This is the username/email input -->
         <!--     </div>
             <div class="input-field">
                 <label for="id_password">Password:</label>

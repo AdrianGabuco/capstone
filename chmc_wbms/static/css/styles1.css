@@ -143,12 +143,12 @@
 }
 
 .headerheaderlog {
-    margin-top: 22px;
-    margin-left: 30px;
-    margin-right: 62px;
+    margin-left: 60px;
+    margin-right: 60px;
     border-bottom-left-radius: 40px;
     border-bottom-right-radius: 40px;
     background-color: var(--white_a700);
+    height: 80px;
     @media only screen and (max-width: 1050px) {
         margin-left: 0px;
         margin-right: 0px;        
@@ -193,6 +193,17 @@
     }
 }
 
+.rowcurehealth {
+    display: flex;
+    align-items: start;
+}
+
+.headerlogo_one {
+    height: 82px;
+    width: 92px;
+    object-fit: contain;
+}
+
 .rowhealth-2 {
     margin-top: 26px;
     gap: var(--space-4xl);
@@ -224,7 +235,7 @@
 .curehealth-1 {
     font-weight: 600 !important;
     align-self: end;
-    line-height: 22px;
+    line-height: 22px; 
 }
 
 .curehealth-span {
@@ -247,7 +258,7 @@
 }
 
 .rowprofileicono {
-    margin-top: 4p;
+    margin-top: 4px;
     width: 30%;
     display: flex;
     justify-content: center;
@@ -282,13 +293,11 @@
 
 .admin {
     color: var(--black_900) !important;
+    text-align: center;
+    padding-top: 12px;
     padding-left: 12px;
     padding-right: 12px;
-    background-color: var(--gray_200) !important;
-    box-shadow: 0 7px 4px 0 var(--black_900_33) !important;
     width: 92%;
-    height: 74px;
-    border-radius: 24px !important;
 }
 
 .username_one {
