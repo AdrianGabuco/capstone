@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import user_passes_test, login_required
@@ -7,19 +8,41 @@ from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
 from datetime import timedelta
 
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            
+            # Determine user type and redirect accordingly
+            if user.is_superuser:  # Assuming superuser is the admin
+                return redirect('admin_dashboard')
+            elif hasattr(user, 'is_employee') and user.is_employee:
+                return redirect('employee_dashboard')
+            else:
+                # Redirect to a default page or show an error
+                messages.error(request, "Access not allowed.")
+                return redirect('login')  # Replace 'login' with your login page name
+        else:
+            messages.error(request, "Invalid credentials")
+            
+    return render(request, 'login.html')
+
 def admin_login_view(request):
-    form = AuthenticationForm(request, data=request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        username = form.cleaned_data.get('username')
-        password = form.cleaned_data.get('password')
-        user = authenticate(username=username, password=password)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+
         if user is not None and user.is_superuser:  # Check if the user is an admin
             login(request, user)
-            return redirect('admin_dashboard')  # Change to your admin dashboard view
+            return redirect('admin_dashboard')
         else:
-            form.add_error(None, "You are not authorized to access this page.")
-
-    return render(request, 'admin/admin_login.html', {'form': form})
+            messages.error(request, "Invalid credentials or unauthorized access.")
+    return render(request, 'admin/admin_login.html')
 
 def employee_login_view(request):
     if request.method == 'POST':

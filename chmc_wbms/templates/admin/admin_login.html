@@ -34,36 +34,22 @@
                 <div class="section_form">
                     <h1 class="section_form_title ui heading size-headings">LOGIN TO YOUR ACCOUNT</h1>
                     <div class="section_form_fields">
-                        <label class="section_form_input--username ui input gray_200 size-xs fill round">
-                            <input name="Username Field" placeholder="username" type="text" />
-                        </label>
-                        <label class="section_form_input--password ui input gray_200 size-xs fill round">
-                            <input name="Password Field" placeholder="password" type="password" />
-                        </label>
-                        <a href="{% url 'employee_login' %}" class="forgot-password-link">
-                            <h2 class="ui heading size-headingxs">EMPLOYEE LOGIN</h2>
-                        </a>
-                        <button class="section_form_button--login ui button blue_a100_6b size-lg fill round"><a href="{% url 'admin_dashboard' %}">LOGIN</a></button>
+                        <form action="{% url 'admin_login' %}" method="POST">
+                            {% csrf_token %}
+                            <label class="section_form_input--username ui input gray_200 size-xs fill round">
+                                <input name="username" placeholder="username" type="text" required />
+                            </label>
+                            <label class="section_form_input--password ui input gray_200 size-xs fill round">
+                                <input name="password" placeholder="password" type="password" required />
+                            </label>
+                            <button type="submit" class="section_form_button--login ui button blue_a100_6b size-lg fill round">
+                                LOGIN
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>     
-        <!-- <h2>Admin Login</h2>
-        --> <!-- This is the username/email input -->
-        <!--     </div>
-            <div class="input-field">
-                <label for="id_password">Password:</label>
-                {{ form.password }} --> <!--  This is the password input   -->
-        <!--     </div>
-            <div class="login-button">
-                <button type="submit">Login</button>
-            </div>
-            <div class="admin-login">
-                <a href="{% url 'employee_login' %}">Employee Login</a>
-            </div>
-        </form>
-        </div>
-        </div> -->
 </body>
 </html>
