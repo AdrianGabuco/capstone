@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractUser
+from django.conf import settings
 
 class Patient(models.Model):
     name = models.CharField(max_length=100)
@@ -12,7 +13,7 @@ class Patient(models.Model):
         return self.name
 
 class Doctor(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     specialization = models.CharField(max_length=100)
 
     def __str__(self):
@@ -40,4 +41,15 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.patient.name} with {self.doctor.user.username} on {self.date}"
+
+
+class CustomUser(AbstractUser):
+    middle_initial = models.CharField(max_length=1, blank=True, null=True)
+    prefix = models.CharField(max_length=10, blank=True, null=True)
+    mobile_number = models.CharField(max_length=15, blank=True, null=True)
+    is_employee = models.BooleanField(default=False)
+    is_associated_doctor = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.username} ({self.get_full_name()})"
 # Create your models here.

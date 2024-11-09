@@ -2,11 +2,14 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.db.models import Sum, Count
 from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
 from datetime import timedelta
+from .forms import UserCreationForm
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -107,3 +110,37 @@ def admin_dashboard_view(request):
 def admin_logout_view(request):
     logout(request)  # This logs out the user
     return redirect('admin_login') 
+
+
+
+def create_account_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            # Save the new user
+            user = form.save(commit=False)
+            user.username = form.cleaned_data['email']
+            user.password = make_password(form.cleaned_data['password'])
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name = form.cleaned_data['last_name']
+            user.email = form.cleaned_data['email']
+            
+            # Save the user to database
+            user.save()
+
+            # Add additional fields to user profile
+            account_type = form.cleaned_data['account_type']
+            if account_type == 'employee':
+                user.is_employee = True  # Assuming you have is_employee field in User model
+            elif account_type == 'doctor':
+                user.is_associated_doctor = True  # Assuming you have is_associated_doctor field in User model
+
+            user.save()
+            messages.success(request, "Account created successfully!")
+            return redirect('admin_dashboard')
+        else:
+            messages.error(request, "Error creating account. Please check the details.")
+
+    else:
+        form = UserCreationForm()
+    return render(request, 'admin/create_account.html', {'form': form})
