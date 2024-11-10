@@ -37,18 +37,19 @@
                         <form action="{% url 'admin_login' %}" method="POST">
                             {% csrf_token %}
                             <label class="section_form_input--username ui input gray_200 size-xs fill round">
-                                <input name="username" placeholder="username" type="text" required />
+                                <input name="username" placeholder="USERNAME" type="text" required />
                             </label>
                             <label class="section_form_input--password ui input gray_200 size-xs fill round">
-                                <input name="password" placeholder="password" type="password" required />
+                                <input name="password" placeholder="PASSWORD" type="password" required />
                             </label>
+                            <a href="{% url 'employee_login' %}" class="forgot-password-link">
+                                <h2 class="ui heading size-headingxs">EMPLOYEE LOGIN</h2>
+                            </a>
                             <button type="submit" class="section_form_button--login ui button blue_a100_6b size-lg fill round">
                                 LOGIN
                             </button>
                         </form>
-                        <a href="{% url 'employee_login' %}" class="forgot-password-link">
-                            <h2 class="ui heading size-headingxs">EMPLOYEE LOGIN</h2>
-                        </a>
+                        
                     </div>
                 </div>
             </div>
