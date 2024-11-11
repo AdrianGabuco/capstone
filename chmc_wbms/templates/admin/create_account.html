@@ -4,12 +4,76 @@
 
 {% block content %}
 <div class="container">
-    <h1>Create New Account</h1>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Create Account</button>
-    </form>
-    <a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+        <div class="b-example-divider"></div>
+
+<div class="modal modal-sheet position-static d-block bg-body-secondary p-4 py-md-5" tabindex="-1" role="dialog" id="modalSignin">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content rounded-4 shadow">
+      <div class="modal-header p-5 pb-4 border-bottom-0">
+        <h1 class="fw-bold mb-0 fs-2">Create New Account</h1>
+        <a href="{% url 'admin_dashboard' %}">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </a>
+      </div>
+
+      <div class="modal-body p-5 pt-0">
+        <form>
+          <div class="form-floating mb-3">
+            <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name">
+            <label for="floatingFirst">First Name</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name">
+            <label for="floatingLast">Last Name</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input name="middle_initial" type="text" class="form-control rounded-3" id="floatingMiddle" placeholder="Middle Name">
+            <label for="floatingMiddle">Middle Name</label>
+          </div>
+          <div class="form-floating mb-3">
+            <select id="prefix" name="prefix" class="form-select" required>
+                <option value="" selected>Select Prefix</option>
+                <option value="Jr.">Jr.</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+            </select>
+            <label for="prefix" class="form-label">Prefix</label>
+          </div>
+          <div class="mb-3">
+            <h5 class="mb-2">Account Type</h5>
+            <div class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="accountType" id="accountEmployee" value="Employee" checked>
+                <label class="form-check-label" for="accountEmployee">Employee</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input type="radio" class="form-check-input" name="accountType" id="accountDoctor" value="Associated Doctor">
+                <label class="form-check-label" for="accountDoctor">Associated Doctor</label>
+            </div>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="tel" class="form-control rounded-3" id="floatingPhone" placeholder="Phone Number" name="phone" required>
+          <label for="floatingPhone">Phone Number</label>
+        </div>
+          <div class="form-floating mb-3">
+            <input type="email" class="form-control rounded-3" id="floatingInput" placeholder="Email">
+            <label for="floatingInput">Email address</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password">
+            <label for="floatingPassword">Password</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control rounded-3" id="floatingConfirmPassword" placeholder="Confirm Password" required>
+            <label for="floatingConfirmPassword">Confirm Password</label>
+          </div>
+          <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+
+
 {% endblock %}
