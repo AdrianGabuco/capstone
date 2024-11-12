@@ -10,15 +10,17 @@ class UserCreationForm(forms.ModelForm):
         choices=[('', 'Select Prefix'), ('Dr.', 'Dr.'), ('Dra.', 'Dra.')],
         required=False
     )
-    account_type = forms.ChoiceField(choices=[('employee', 'Employee'), ('doctor', 'Associated Doctor')])
+    is_employee = forms.BooleanField(required=False)
+    is_associated_doctor = forms.BooleanField(required=False)
     mobile_number = forms.CharField(max_length=15)
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
+    image = forms.ImageField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'mobile_number', 'password']
+        fields = ['email', 'first_name', 'last_name', 'middle_initial', 'prefix', 'mobile_number', 'password', 'confirm_password', 'image','is_employee','is_associated_doctor']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -26,6 +28,18 @@ class UserCreationForm(forms.ModelForm):
         confirm_password = cleaned_data.get("confirm_password")
 
         if password and confirm_password and password != confirm_password:
-            raise ValidationError("Passwords do not match.")
+            raise forms.ValidationError("Passwords do not match.")
 
         return cleaned_data
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("This email is already in use.")
+        return email
+
+class UserChangeForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'first_name', 'last_name', 'middle_initial', 'prefix', 'mobile_number', 'image']
+    

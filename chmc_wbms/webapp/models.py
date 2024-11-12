@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
 
 class Patient(models.Model):
@@ -42,14 +42,43 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient.name} with {self.doctor.user.username} on {self.date}"
 
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        # Set a default username if one isn't provided
+        extra_fields.setdefault('username', email)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150, blank=True, null=True)
     middle_initial = models.CharField(max_length=1, blank=True, null=True)
     prefix = models.CharField(max_length=10, blank=True, null=True)
     mobile_number = models.CharField(max_length=15, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
     is_associated_doctor = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='profile_pics/', blank=True, null=True, default='static/image/profile_ICON.jpg')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []  # Make sure `username` is not required
+
+    objects = CustomUserManager()
 
     def __str__(self):
-        return f"{self.username} ({self.get_full_name()})"
-# Create your models here.
+        return f"{self.email} ({self.get_full_name()})"

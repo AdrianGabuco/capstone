@@ -9,7 +9,7 @@ from webapp.models import Appointment, Patient, Payment
 from django.utils import timezone
 from datetime import timedelta
 from .forms import UserCreationForm
-
+from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
     if request.method == 'POST':
@@ -25,6 +25,8 @@ def login_view(request):
                 return redirect('admin_dashboard')
             elif hasattr(user, 'is_employee') and user.is_employee:
                 return redirect('employee_dashboard')
+            elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+                return redirect('assoc_doc_dashboard')
             else:
                 # Redirect to a default page or show an error
                 messages.error(request, "Access not allowed.")
@@ -34,6 +36,7 @@ def login_view(request):
             
     return render(request, 'login.html')
 
+@csrf_protect
 def admin_login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -61,7 +64,7 @@ def employee_login_view(request):
                 if user.is_superuser:
                     return redirect('admin_dashboard')  # Change this to your admin dashboard URL
                 else:
-                    return redirect('home')  # Change this to your normal dashboard URL
+                    return redirect('employee_dashboard')  # Change this to your normal dashboard URL
     else:
         form = AuthenticationForm()
 
@@ -129,11 +132,13 @@ def create_account_view(request):
             user.save()
 
             # Add additional fields to user profile
-            account_type = form.cleaned_data['account_type']
+
+            account_type = request.POST.get('account_type')  # Get the selected account type
             if account_type == 'employee':
-                user.is_employee = True  # Assuming you have is_employee field in User model
-            elif account_type == 'doctor':
-                user.is_associated_doctor = True  # Assuming you have is_associated_doctor field in User model
+                user.is_employee = True
+            elif account_type == 'assoc_doctor':
+                user.is_associated_doctor = True
+
 
             user.save()
             messages.success(request, "Account created successfully!")
@@ -144,3 +149,7 @@ def create_account_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'admin/create_account.html', {'form': form})
+
+@user_passes_test(lambda u: u.is_employee)
+def employee_dashboard_view(request):
+       return render(request, 'employee/employee_dashboard.html')
