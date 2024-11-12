@@ -19,6 +19,52 @@ body {
     }
 }
 
+.nav-tabs .nav-link {
+    color: #6c757d; /* Tab text color */
+    font-weight: bold;
+    border: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .nav-tabs .nav-link.active {
+    color: #000; /* Active tab text color */
+    background-color: transparent;
+    border-bottom: 3px solid #007bff; /* Active tab bottom border */
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: #007bff; /* Hover text color */
+  }
+
+  /* White background and padding for tab content */
+  .tab-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    height: 500px; /* Fixed height */
+      width: 100%; /* Full width */
+  }
+
+  .table-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .table th, .table td {
+    border: 1px solid #007bff;
+    text-align: center;
+  }
+  .table th {
+    background-color: #e9f1ff;
+    color: #007bff;
+  }
+  .pagination {
+    justify-content: center;
+    margin-top: 20px;
+  }
+
 .gradient-custom {
     /* fallback for old browsers */
     background: #f093fb;
