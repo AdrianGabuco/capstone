@@ -6,7 +6,10 @@ class UserCreationForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30)
     last_name = forms.CharField(max_length=30)
     middle_initial = forms.CharField(max_length=1, required=False)
-    prefix = forms.CharField(max_length=10, required=False)
+    prefix = forms.ChoiceField(
+        choices=[('', 'Select Prefix'), ('Dr.', 'Dr.'), ('Dra.', 'Dra.')],
+        required=False
+    )
     account_type = forms.ChoiceField(choices=[('employee', 'Employee'), ('doctor', 'Associated Doctor')])
     mobile_number = forms.CharField(max_length=15)
     email = forms.EmailField()

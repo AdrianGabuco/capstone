@@ -19,53 +19,53 @@
       </div>
 
       <div class="modal-body p-5 pt-0">
-        <form>
+        <form method="post" onsubmit="return validatePassword()">
+          {% csrf_token %}
           <div class="form-floating mb-3">
-            <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name">
+            <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name" required>
             <label for="floatingFirst">First Name</label>
           </div>
           <div class="form-floating mb-3">
-            <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name">
+            <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name" required>
             <label for="floatingLast">Last Name</label>
           </div>
           <div class="form-floating mb-3">
             <input name="middle_initial" type="text" class="form-control rounded-3" id="floatingMiddle" placeholder="Middle Name">
-            <label for="floatingMiddle">Middle Name</label>
+            <label for="floatingMiddle">Middle Name (Optional)</label>
           </div>
           <div class="form-floating mb-3">
             <select id="prefix" name="prefix" class="form-select">
                 <option value="" selected>Select Prefix</option>
-                <option value="Jr.">Dr.</option>
-                <option value="II">II</option>
-                <option value="III">III</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Dra.">Dra.</option>
             </select>
-            <label for="prefix" class="form-label">Prefix</label>
-          </div>
+            <label for="prefix" class="form-label">Prefix (Optional)</label>
+        </div>
           <div class="mb-3">
             <h5 class="mb-2">Account Type</h5>
             <div class="form-check form-check-inline">
-                <input type="radio" class="form-check-input" name="accountType" id="accountEmployee" value="Employee" checked>
+                <input type="radio" class="form-check-input" name="account_type" id="accountEmployee" value="employee" checked>
                 <label class="form-check-label" for="accountEmployee">Employee</label>
             </div>
             <div class="form-check form-check-inline">
-                <input type="radio" class="form-check-input" name="accountType" id="accountDoctor" value="Associated Doctor">
+                <input type="radio" class="form-check-input" name="account_type" id="accountDoctor" value="Associated Doctor">
                 <label class="form-check-label" for="accountDoctor">Associated Doctor</label>
             </div>
         </div>
         <div class="form-floating mb-3">
-          <input type="tel" class="form-control rounded-3" id="floatingPhone" placeholder="Phone Number" name="phone" required>
+          <input type="tel" class="form-control rounded-3" id="floatingPhone" placeholder="Phone Number" name="mobile_number" required>
           <label for="floatingPhone">Phone Number</label>
         </div>
           <div class="form-floating mb-3">
-            <input type="email" class="form-control rounded-3" id="floatingInput" placeholder="Email">
+            <input type="email" class="form-control rounded-3" id="floatingInput" placeholder="Email" name="email" required>
             <label for="floatingInput">Email address</label>
           </div>
           <div class="form-floating mb-3">
-            <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password">
+            <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password" name="password" required>
             <label for="floatingPassword">Password</label>
           </div>
           <div class="form-floating mb-3">
-            <input type="password" class="form-control rounded-3" id="floatingConfirmPassword" placeholder="Confirm Password" required>
+            <input type="password" class="form-control rounded-3" id="floatingConfirmPassword" placeholder="Confirm Password" name="confirm_password" required>
             <label for="floatingConfirmPassword">Confirm Password</label>
           </div>
           <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Create Account</button>
@@ -75,5 +75,18 @@
   </div>
 </div>
 
+<script>
+  // Function to check if passwords match
+  function validatePassword() {
+      const password = document.getElementById("floatingPassword").value;
+      const confirmPassword = document.getElementById("floatingConfirmPassword").value;
+      
+      if (password !== confirmPassword) {
+          alert("Passwords do not match!");
+          return false; // Prevents form submission
+      }
+      return true; // Allows form submission
+  }
+</script>
 
 {% endblock %}
