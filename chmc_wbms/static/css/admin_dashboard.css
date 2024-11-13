@@ -86,4 +86,9 @@ body {
     top: 13px;
     }
 
-    
+    .icon-large {
+      font-size: 3rem;       /* Increase font size for larger icons */
+      color: #007bff;        /* Optional: Change color */
+      margin-top: 15px;      /* Adds space above the icon */
+      margin-bottom: 10px;   /* Adds space below the icon */
+  }
