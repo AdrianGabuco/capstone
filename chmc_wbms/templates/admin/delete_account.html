@@ -1,0 +1,12 @@
+{% extends 'admin/admin_base.html' %}
+{% block title %}Delete Account{% endblock %}
+
+{% block content %}
+<h2>Delete Account</h2>
+<p>Are you sure you want to delete the account for {{ account.first_name }} {{ account.last_name }}?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a href="{% url 'manage_accounts' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

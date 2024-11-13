@@ -1,0 +1,76 @@
+
+
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+
+    <h2>Manage Accounts</h2>
+    <div class="row">
+        {% for account in accounts %}
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#accountModal{{ account.id }}">
+                        <img src="{{ account.image.url }}" class="card-img-top" alt="Account Image">
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {% if account.prefix %}
+                                {{ account.prefix }} {{ account.first_name }} {{ account.last_name }}
+                            {% else %}
+                                {{ account.first_name }} {{ account.last_name }}
+                            {% endif %}
+                        </h5>
+                        <p class="card-text">
+                            {% if account.is_employee %}
+                                <strong>Account Type:</strong> Employee
+                            {% elif account.is_associated_doctor %}
+                                <strong>Account Type:</strong> Associated Doctor
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Modal for Account Details -->
+            <div class="modal fade" id="accountModal{{ account.id }}" tabindex="-1" aria-labelledby="accountModalLabel{{ account.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="accountModalLabel{{ account.id }}">
+                                {% if account.prefix %}
+                                    {{ account.prefix }} {{ account.first_name }} {{ account.last_name }}
+                                {% else %}
+                                    {{ account.first_name }} {{ account.last_name }}
+                                {% endif %}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% endif %}</p>
+                            <p><strong>Email:</strong> {{ account.email }}</p>
+                            <p><strong>Mobile Number:</strong> {{ account.mobile_number }}</p>
+                            <!-- Add more fields here as needed -->
+                        </div>
+                        <div class="modal-footer">
+                            <!-- Edit button redirects to an edit view -->
+                            <a href="{% url 'edit_account' account.id %}" class="btn btn-primary">Edit</a>
+                            
+                            <!-- Delete button with confirmation -->
+                            <a href="{% url 'delete_account' account.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this account?');">Delete</a>
+                            
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p>No accounts found.</p>
+        {% endfor %}
+    </div>
+    
+{% include 'admin/includes/pagination.html' %}
+
+{% endblock %}

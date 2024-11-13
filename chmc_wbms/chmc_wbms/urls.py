@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view
+from webapp.views import employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -25,9 +25,14 @@ urlpatterns = [
     path('', employee_login_view, name='employee_login'),
     path('admin_login/', admin_login_view, name='admin_login'),
     path('admin_dashboard/', admin_dashboard_view, name='admin_dashboard'),
+    path('manage_accounts/', manage_account_view, name='manage_accounts'),
+    path('patients_list/', patients_list_view, name='patients_list'),
     path('employee_dashboard/', employee_dashboard_view, name='employee_dashboard'),
-    path('logout/', admin_logout_view, name='admin_logout'),
     path('create_account/', create_account_view, name='create_account'),
+    path('logout/', admin_logout_view, name='admin_logout'),
+    path('edit_account/<int:account_id>/', edit_account_view, name='edit_account'),
+    path('delete_account/<int:account_id>/', delete_account_view, name='delete_account'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

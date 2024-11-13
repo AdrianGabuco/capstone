@@ -1,14 +1,18 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count
-from webapp.models import Appointment, Patient, Payment
+from webapp.models import Appointment, Patient, Payment, CustomUser
 from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from datetime import timedelta
-from .forms import UserCreationForm
+from .forms import UserCreationForm, CustomUserForm
 from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
@@ -43,35 +47,59 @@ def admin_login_view(request):
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
 
-        if user is not None and user.is_superuser:  # Check if the user is an admin
+        if user is not None and user.is_superuser:
             login(request, user)
-            return redirect('admin_dashboard')
+            # Set custom session data (Django manages session storage automatically)
+            session_key = f"admin_session_{get_random_string(32)}"
+            request.session['session_key'] = session_key
+            request.session['user_id'] = user.id
+            response = HttpResponseRedirect(reverse('admin_dashboard'))
+            response.set_cookie('admin_session', session_key, httponly=True)
+            return response
         else:
             messages.error(request, "Invalid credentials or unauthorized access.")
     return render(request, 'admin/admin_login.html')
+
 
 def employee_login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            # Authenticate the user
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
-            if user is not None:
+
+            if user is not None and hasattr(user, 'is_employee') and user.is_employee:
                 login(request, user)
-                # Redirect based on user type (admin or normal user)
-                if user.is_superuser:
-                    return redirect('admin_dashboard')  # Change this to your admin dashboard URL
-                else:
-                    return redirect('employee_dashboard')  # Change this to your normal dashboard URL
+                # Set custom session data (Django manages session storage automatically)
+                session_key = f"employee_session_{get_random_string(32)}"
+                request.session['session_key'] = session_key
+                request.session['user_id'] = user.id
+                response = HttpResponseRedirect(reverse('employee_dashboard'))
+                response.set_cookie('employee_session', session_key, httponly=True)
+                return response
+            else:
+                messages.error(request, "Invalid credentials or unauthorized access.")
     else:
         form = AuthenticationForm()
 
     return render(request, 'employee/employee_login.html', {'form': form})
 
 
+@user_passes_test(lambda u: u.is_superuser)
+def manage_account_view(request):
+    # Filter out the superuser accounts and get only employees and associated doctors
+    accounts = CustomUser.objects.exclude(is_superuser=True).filter(is_employee=True) | CustomUser.objects.exclude(is_superuser=True).filter(is_associated_doctor=True)
 
+    # Context to pass to the template
+    context = {
+        'accounts': accounts,
+    }
+    return render(request, 'admin/manage_accounts.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+def patients_list_view(request):
+    return render(request, 'admin/patients_list.html')
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard_view(request):
@@ -153,3 +181,28 @@ def create_account_view(request):
 @user_passes_test(lambda u: u.is_employee)
 def employee_dashboard_view(request):
        return render(request, 'employee/employee_dashboard.html')
+
+@login_required
+def edit_account_view(request, account_id):
+    account = get_object_or_404(CustomUser, id=account_id)
+    form = CustomUserForm(request.POST or None, request.FILES or None, instance=account)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Account updated successfully.')
+            return redirect('manage_accounts')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    
+    return render(request, 'admin/edit_account.html', {'form': form, 'account': account})
+
+@login_required
+def delete_account_view(request, account_id):
+    account = get_object_or_404(CustomUser, id=account_id)
+    if request.method == 'POST':
+        account.delete()
+        messages.success(request, 'Account deleted successfully.')
+        return redirect('manage_accounts')
+    
+    return render(request, 'admin/delete_account.html', {'account': account})

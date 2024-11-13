@@ -6,30 +6,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- If you're using CSS -->
+    <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles1.css' %}">  
 </head>
 <body>
-    <div class="login-container">
-        <h2>Employee Login</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            <div class="input-field">
-                <label for="id_username">Email/Username:</label>
-                {{ form.username }}  <!-- This is the username/email input -->
+    <div class="bg">
+        <div class="section">
+            <div class="section_content"> 
+                <div class="section_content_image-column">
+                    <div class="section_content_text-row">
+                        <div class="section_content_text-column">
+                            <img src="{% static 'image/Icon.png' %}" alt="Secondary Logo" class="section_content_image" />
+                            <p class="section_content_heading ui text size-textxs">
+                                <span class="section_content_heading-span"> CURE </span>
+                                <span class="section_content_heading-span-1"> 
+                                    HEALTH <br /> 
+                                    MEDICAL CLINIC <br /> ONLINE SYSTEM
+                                </span>
+                            </p>
+                        </div>
+                        <img src="{% static 'image/img_line_1.svg' %}" alt="Lineone" class="section_content_divider"/>
+                    </div>
+                </div>
+                <div class="section_form">
+                    <h1 class="section_form_title ui heading size-headings">LOGIN TO YOUR ACCOUNT</h1>
+                    <div class="section_form_fields">
+                        <form action="{% url 'employee_login' %}" method="POST">
+                            {% csrf_token %}
+                            <label class="section_form_input--username ui input gray_200 size-xs fill round">
+                                <input name="username" placeholder="USERNAME" type="text" required />
+                            </label>
+                            <label class="section_form_input--password ui input gray_200 size-xs fill round">
+                                <input name="password" placeholder="PASSWORD" type="password" required />
+                            </label>
+                            <a href="{% url 'admin_login' %}" class="forgot-password-link">
+                                <h2 class="ui heading size-headingxs">ADMIN LOGIN</h2>
+                            </a>
+                            <button type="submit" class="section_form_button--login ui button blue_a100_6b size-lg fill round">
+                                LOGIN
+                            </button>
+                        </form>
+                        
+                    </div>
+                </div>
             </div>
-            <div class="input-field">
-                <label for="id_password">Password:</label>
-                {{ form.password }}  <!-- This is the password input -->
-            </div>
-            <div class="login-button">
-                <button type="submit">Login</button>
-            </div>
-        </form>
-
-        <div class="admin-login">
-            <a href="{% url 'admin_login' %}">Admin Login</a>
         </div>
-    </div>
+    </div>     
 </body>
 </html>

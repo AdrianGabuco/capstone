@@ -73,7 +73,7 @@ class CustomUser(AbstractUser):
     mobile_number = models.CharField(max_length=15, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
     is_associated_doctor = models.BooleanField(default=False)
-    image = models.ImageField(upload_to='profile_pics/', blank=True, null=True, default='static/image/profile_ICON.jpg')
+    image = models.ImageField(upload_to='profile_pics/', blank=True, null=True, default='../static/image/profile_ICON.png')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []  # Make sure `username` is not required
