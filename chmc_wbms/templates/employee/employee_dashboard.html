@@ -1,1 +1,55 @@
-<h2>Today's Appointments</h2>
+{% extends 'employee/employee_base.html' %}
+
+{% block title %}Employee Dashboard{% endblock %}
+
+{% block content %}
+
+      <h2>Admin Dashboard</h2>
+      <!-- Dashboard Content for Home -->
+      <div class="d-flex justify-content-around mt-4">
+        <div class="text-center">
+            <i class="bi bi-people-fill icon-large"></i>
+            <h5>Total Clinic User Account</h5>
+            <p>15</p>
+        </div>
+        <div class="text-center">
+            <i class="bi bi-file-earmark-text icon-large"></i>
+            <h5>Total Document Recorded</h5>
+            <p>1,001</p>
+        </div>
+        <div class="text-center">
+            <i class="bi bi-person-check-fill icon-large"></i>
+            <h5>Patient Serve Counter</h5>
+            <p>975</p>
+        </div>
+      </div>
+
+
+        <!-- <div class="stats">
+            <h3>Today's Income: ${{ daily_income }}</h3>
+            <h3>This Week's Income: ${{ weekly_income }}</h3>
+            <h3>This Month's Income: ${{ monthly_income }}</h3>
+            <h3>Today Patients Attended: {{ today_patients }}</h3>
+            <h3>This Week Patients Attended: {{ weekly_patients }}</h3>
+        </div>
+
+        <h2>Today's Appointments</h2>
+        <ul>
+            {% for appointment in today_appointments %}
+                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} at {{ appointment.date|date:"H:i" }}</li>
+            {% empty %}
+                <li>No appointments today.</li>
+            {% endfor %}
+        </ul>
+        
+        <h2>All Appointments</h2>
+        <ul>
+            {% for appointment in all_appointments %}
+                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} on {{ appointment.date|date:"d M Y H:i" }}</li>
+            {% empty %}
+                <li>No appointments found.</li>
+            {% endfor %}
+        </ul> -->
+
+
+{% endblock %}

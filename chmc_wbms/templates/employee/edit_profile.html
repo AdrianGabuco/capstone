@@ -1,9 +1,9 @@
-{% extends 'admin/admin_base.html' %}
+{% extends 'employee/employee_base.html' %}
 {% load static %}
-{% block title %}Edit Account{% endblock %}
+{% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<h2>Edit Account</h2>
+<h2>Edit Profile</h2>
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     
@@ -28,17 +28,6 @@
         {{ form.prefix }}
     </div>
 
-    <div>
-        <label for="{{ form.prefix.id_for_label }}">Employee:</label>
-        {{ form.is_employee }}
-    </div>
-
-    <div>
-        <label for="{{ form.prefix.id_for_label }}">Associated Doctor:</label>
-        {{ form.is_associated_doctor }}
-    </div>
-
-    
 
     <!-- Change Password checkbox -->
     <div>
@@ -74,4 +63,5 @@
         }
     });
 </script>
+
 {% endblock %}

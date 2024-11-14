@@ -14,7 +14,7 @@
                 <div class="card">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#accountModal{{ account.id }}">
                         <img src="{{ account.image.url }}" class="card-img-top" alt="Account Image">
-                    </a>
+                    
                     <div class="card-body">
                         <h5 class="card-title">
                             {% if account.prefix %}
@@ -31,6 +31,7 @@
                             {% endif %}
                         </p>
                     </div>
+                    </a>
                 </div>
             </div>
     
@@ -46,7 +47,6 @@
                                     {{ account.first_name }} {{ account.last_name }}
                                 {% endif %}
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% endif %}</p>

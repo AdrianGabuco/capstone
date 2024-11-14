@@ -12,7 +12,7 @@ from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from datetime import timedelta
-from .forms import UserCreationForm, CustomUserForm
+from .forms import UserCreationForm, CustomUserForm, EditProfileForm
 from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
@@ -72,11 +72,9 @@ def employee_login_view(request):
             if user is not None and hasattr(user, 'is_employee') and user.is_employee:
                 login(request, user)
                 # Set custom session data (Django manages session storage automatically)
-                session_key = f"employee_session_{get_random_string(32)}"
-                request.session['session_key'] = session_key
-                request.session['user_id'] = user.id
+
                 response = HttpResponseRedirect(reverse('employee_dashboard'))
-                response.set_cookie('employee_session', session_key, httponly=True)
+
                 return response
             else:
                 messages.error(request, "Invalid credentials or unauthorized access.")
@@ -142,6 +140,9 @@ def admin_logout_view(request):
     logout(request)  # This logs out the user
     return redirect('admin_login') 
 
+def employee_logout_view(request):
+    logout(request)  # This logs out the user
+    return redirect('employee_login') 
 
 
 def create_account_view(request):
@@ -180,7 +181,9 @@ def create_account_view(request):
 
 @user_passes_test(lambda u: u.is_employee)
 def employee_dashboard_view(request):
-       return render(request, 'employee/employee_dashboard.html')
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/employee_dashboard.html', context)
 
 @login_required
 def edit_account_view(request, account_id):
@@ -206,3 +209,18 @@ def delete_account_view(request, account_id):
         return redirect('manage_accounts')
     
     return render(request, 'admin/delete_account.html', {'account': account})
+
+@login_required
+def edit_profile_view(request, account_id):
+    account = get_object_or_404(CustomUser, id=account_id)
+    form = EditProfileForm(request.POST or None, request.FILES or None, instance=account)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Account updated successfully.')
+            return redirect('employee_dashboard')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    
+    return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
