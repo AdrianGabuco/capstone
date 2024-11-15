@@ -5,11 +5,20 @@
           Home</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a  href="{% url 'manage_accounts' %}" class="nav-link">
-          Manage Accounts</a>
+      <a  href="{% url 'employee_dashboard' %}" class="nav-link">
+          Record List</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a href="{% url 'patients_list' %}" class="nav-link">
-          Patients List</a>
+      <a href="{% url 'employee_dashboard' %}" class="nav-link">
+          Record Documents</a>
     </li>
+    <li class="nav-item" role="presentation">
+      <a href="{% url 'employee_dashboard' %}" class="nav-link">
+          Associated Doctors</a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a href="{% url 'employee_dashboard' %}" class="nav-link">
+          Doctors Reading</a>
+    </li>
+    
   </ul>
