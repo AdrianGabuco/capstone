@@ -225,21 +225,31 @@ def edit_profile_view(request, account_id):
     
     return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
 
-@login_required
+
+@user_passes_test(lambda u: u.is_employee)
 def employee_patients_list_view(request):
-    return render(request, 'employee/patients_list.html')
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/patients_list.html', context)
 
-@login_required
+
+@user_passes_test(lambda u: u.is_employee)
 def document_results_view(request):
-    return render(request, 'employee/document_results.html')
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/document_results.html', context)
 
-@login_required
+
+@user_passes_test(lambda u: u.is_employee)
 def assoc_doc_readings_view(request):
-    return render(request, 'employee/assoc_doc_readings.html')
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/assoc_doc_readings.html', context)
 
-@login_required
+@user_passes_test(lambda u: u.is_employee)
 def associated_doctors_view(request):
-    return render(request, 'employee/associated_doctors.html')
-
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/associated_doctors.html', context)
 
 

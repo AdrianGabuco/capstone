@@ -60,6 +60,7 @@
     </div>
 
     <button type="submit">Save Changes</button>
+    <button type="button" onclick="goBack()">Back</button> <!-- Back button -->
 </form>
 
 <script>
@@ -73,5 +74,9 @@
             passwordFields.style.display = 'none';
         }
     });
+
+    function goBack() {
+        window.history.back();
+    }
 </script>
 {% endblock %}
