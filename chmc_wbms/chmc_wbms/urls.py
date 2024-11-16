@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view
+from webapp.views import employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -34,6 +34,10 @@ urlpatterns = [
     path('edit_account/<int:account_id>/', edit_account_view, name='edit_account'),
     path('delete_account/<int:account_id>/', delete_account_view, name='delete_account'),
     path('edit_profile/<int:account_id>/', edit_profile_view, name='edit_profile'),
+    path('patients_list/', employee_patients_list_view, name='employee_patients_list'),
+    path('assoc_doc_readings', assoc_doc_readings_view, name='assoc_doc_readings'),
+    path('associated_doctors/', associated_doctors_view, name='associated_doctors'),
+    path('document_results/', document_results_view, name='document_results'),
 
 ]
 if settings.DEBUG:

@@ -224,3 +224,22 @@ def edit_profile_view(request, account_id):
             messages.error(request, 'Please correct the error below.')
     
     return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
+
+@login_required
+def employee_patients_list_view(request):
+    return render(request, 'employee/patients_list.html')
+
+@login_required
+def document_results_view(request):
+    return render(request, 'employee/document_results.html')
+
+@login_required
+def assoc_doc_readings_view(request):
+    return render(request, 'employee/assoc_doc_readings.html')
+
+@login_required
+def associated_doctors_view(request):
+    return render(request, 'employee/associated_doctors.html')
+
+
+
