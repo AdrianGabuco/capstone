@@ -66,10 +66,17 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractUser):
+
+    PREFIX_CHOICES = [
+        ("", "No Prefix"),  # Blank option for no prefix
+        ("Dr.", "Dr."),
+        ("Dra.", "Dra."),
+    ]
+
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, blank=True, null=True)
     middle_initial = models.CharField(max_length=1, blank=True, null=True)
-    prefix = models.CharField(max_length=10, blank=True, null=True)
+    prefix = models.CharField(max_length=10, blank=True, null=True, choices=PREFIX_CHOICES)
     mobile_number = models.CharField(max_length=15, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
     is_associated_doctor = models.BooleanField(default=False)

@@ -4,24 +4,70 @@ from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 
 class UserCreationForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=30)
-    last_name = forms.CharField(max_length=30)
-    middle_initial = forms.CharField(max_length=1, required=False)
-    prefix = forms.ChoiceField(
-        choices=[('', 'Select Prefix'), ('Dr.', 'Dr.'), ('Dra.', 'Dra.')],
-        required=False
-    )
-    is_employee = forms.BooleanField(required=False)
-    is_associated_doctor = forms.BooleanField(required=False)
-    mobile_number = forms.CharField(max_length=15)
-    email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput)
-    confirm_password = forms.CharField(widget=forms.PasswordInput)
-    image = forms.ImageField(required=False)
-
     class Meta:
         model = CustomUser
-        fields = ['email', 'first_name', 'last_name', 'middle_initial', 'prefix', 'mobile_number', 'password', 'confirm_password', 'image','is_employee','is_associated_doctor']
+        fields = [
+            'email', 
+            'first_name', 
+            'last_name', 
+            'middle_initial', 
+            'prefix', 
+            'mobile_number', 
+            'password', 
+            'confirm_password', 
+            'image', 
+            'is_employee', 
+            'is_associated_doctor'
+        ]
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter last name'
+            }),
+            'middle_initial': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter middle initial (optional)'
+            }),
+            'prefix': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'mobile_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter mobile number'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter email address'
+            }),
+            'password': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter password'
+            }),
+            'confirm_password': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Confirm password'
+            }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control-file'
+            }),
+            'is_employee': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_associated_doctor': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm password'
+        })
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -32,33 +78,84 @@ class UserCreationForm(forms.ModelForm):
             raise forms.ValidationError("Passwords do not match.")
 
         return cleaned_data
-    
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if CustomUser.objects.filter(email=email).exists():
             raise forms.ValidationError("This email is already in use.")
         return email
-
 class UserChangeForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['email', 'first_name', 'last_name', 'middle_initial', 'prefix', 'mobile_number', 'image']
     
-class CustomUserForm(forms.ModelForm):
+class EditAccountForm(forms.ModelForm):
     prefix = forms.ChoiceField(
-        choices=[('', 'Select Prefix'), ('Dr.', 'Dr.'), ('Dra.', 'Dra.')],
-        required=False
+        choices=CustomUser.PREFIX_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    change_password = forms.BooleanField(required=False, label="Change Password")
-
+    change_password = forms.BooleanField(
+        required=False,
+        label="Change Password",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
     # Password fields
-    password = forms.CharField(required=False, widget=forms.PasswordInput, label="Password")
-    confirm_password = forms.CharField(required=False, widget=forms.PasswordInput, label="Confirm Password")
-
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new password (if changing)'
+        }),
+        label="Password"
+    )
+    confirm_password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm new password'
+        }),
+        label="Confirm Password"
+    )
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'prefix', 'is_employee', 'is_associated_doctor', 'image','password','confirm_password','change_password' ]
+        fields = [
+            'first_name', 
+            'last_name', 
+            'email', 
+            'prefix', 
+            'is_employee', 
+            'is_associated_doctor', 
+            'image', 
+            'password', 
+            'confirm_password', 
+            'change_password'
+        ]
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter last name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter email'
+            }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control-file'
+            }),
+            'is_employee': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_associated_doctor': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -86,8 +183,6 @@ class CustomUserForm(forms.ModelForm):
             cleaned_data['confirm_password'] = self.instance.password
 
         return cleaned_data
-
-
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -97,7 +192,6 @@ class CustomUserForm(forms.ModelForm):
             user.password = make_password(self.cleaned_data['password'])
         # If "Change Password" is not checked, keep the current password (don't modify it)
         elif not self.cleaned_data.get('change_password'):
-            # Ensure the password is not cleared out if it is not being changed
             current_password = user.password  # Keep the existing password
             user.password = current_password  # Reassign it to the user object to prevent being overwritten
 
@@ -107,16 +201,52 @@ class CustomUserForm(forms.ModelForm):
     
 class EditProfileForm(forms.ModelForm):
     prefix = forms.ChoiceField(
-        choices=[('', 'Select Prefix'), ('Dr.', 'Dr.'), ('Dra.', 'Dra.')],
-        required=False
+        choices=CustomUser.PREFIX_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    password = forms.CharField(required=False, widget=forms.PasswordInput, label="Password")
-    confirm_password = forms.CharField(required=False, widget=forms.PasswordInput, label="Confirm Password")
-    change_password = forms.BooleanField(required=False, label="Change Password")
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new password (if changing)'
+        }),
+        label="Password"
+    )
+    confirm_password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm new password'
+        }),
+        label="Confirm Password"
+    )
+    change_password = forms.BooleanField(
+        required=False,
+        label="Change Password",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'prefix', 'image', 'password', 'confirm_password','change_password']
+        fields = ['first_name', 'last_name', 'email', 'prefix', 'image', 'password', 'confirm_password', 'change_password']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter last name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter email'
+            }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control-file'
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -144,8 +274,6 @@ class EditProfileForm(forms.ModelForm):
             cleaned_data['confirm_password'] = self.instance.password
 
         return cleaned_data
-
-
 
     def save(self, commit=True):
         user = super().save(commit=False)

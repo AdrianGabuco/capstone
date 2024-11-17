@@ -12,7 +12,7 @@ from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from datetime import timedelta
-from .forms import UserCreationForm, CustomUserForm, EditProfileForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm
 from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
@@ -188,7 +188,7 @@ def employee_dashboard_view(request):
 @login_required
 def edit_account_view(request, account_id):
     account = get_object_or_404(CustomUser, id=account_id)
-    form = CustomUserForm(request.POST or None, request.FILES or None, instance=account)
+    form = EditAccountForm(request.POST or None, request.FILES or None, instance=account)
     
     if request.method == 'POST':
         if form.is_valid():
