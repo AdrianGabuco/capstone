@@ -5,30 +5,28 @@
 {% block content %}
 
 <h2>Associated Doctors</h2>
-
+<body class="bg-light">
 
 {% if associated_doctors %}
-<div class="row">
-    <div class="doctor-list">
+    <div class="container my-5">
+        <div class="row g-4">
         {% for doctor in associated_doctors %}
-        <div class="col-md-3 mb-4">
-            <div class="card">
-                <!-- Display the doctor's image, use a placeholder if no image is provided -->
+          <div class="col-md-4">
+            <div class="card border-primary text-center shadow-sm">
+              <div class="card-body">
                 <img src="{{ doctor.image.url }}" alt="{{ doctor.get_full_name }}" />
+                <h5 class="card-title fw-bold">{{ doctor.prefix }} {{ doctor.first_name }} {{ doctor.last_name }}</h5>
+                <p class="card-text">EMAIL: {{ doctor.email }}</p>
+                <p class="card-text">CONTACT NUMBER: {{ doctor.mobile_number }}</p>
+              </div>
             </div>
-            <div class="card">
-                
-                <h5 class="card-title">{{ doctor.prefix }} {{ doctor.first_name }} {{ doctor.last_name }}</h3>
-                <p><strong>Contact:</strong> {{ doctor.mobile_number }}</p>
-                <p><strong>Email:</strong> {{ doctor.email }}</p>
-            </div>
-        </div>
+          </div>
         {% endfor %}
+        {% else %}
+        <p>No associated doctors found.</p>
+    </div>    
+    {% endif %}
     </div>
-
-{% else %}
-    <p>No associated doctors found.</p>
-</div>    
-{% endif %}
-
+    
+         
 {% endblock %}

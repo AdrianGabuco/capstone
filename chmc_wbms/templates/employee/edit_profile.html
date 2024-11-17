@@ -9,65 +9,91 @@
     {% csrf_token %}
     
     <!-- Manually render each form field -->
-    <div>
-        <label for="{{ form.first_name.id_for_label }}">First Name:</label>
-        {{ form.first_name }}
-    </div>
+    <div class="col-xl-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">Account Details</div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
     
-    <div>
-        <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
-        {{ form.last_name }}
-    </div>
+                    <!-- Row 1: First Name and Last Name -->
+                    <div class="row gx-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name:</label>
+                            {{ form.first_name|class:"form-control" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name:</label>
+                            {{ form.last_name|add_class:"form-control" }}
+                        </div>
+                    </div>
     
-    <div>
-        <label for="{{ form.email.id_for_label }}">Email:</label>
-        {{ form.email }}
-    </div>
+                    <!-- Row 2: Email and Prefix -->
+                    <div class="row gx-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email:</label>
+                            {{ form.email|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.prefix.id_for_label }}" class="form-label">Prefix:</label>
+                            {{ form.prefix|add_class:"form-control" }}
+                        </div>
+                    </div>
     
-    <div>
-        <label for="{{ form.prefix.id_for_label }}">Prefix:</label>
-        {{ form.prefix }}
-    </div>
-
-
-    <!-- Change Password checkbox -->
-    <div>
-        <label for="{{ form.change_password.id_for_label }}">Change Password:</label>
-        {{ form.change_password }}
-    </div>
-
-    <!-- Password fields that are conditionally shown -->
-    <div id="password-fields" style="display: {% if form.change_password.value == 'on' %}block{% else %}none{% endif %}">
-        <div>
-            <label for="{{ form.password.id_for_label }}">Password:</label>
-            {{ form.password }}
+                    <!-- Row 3: Employee and Associated Doctor -->
+                    <div class="row gx-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.is_employee.id_for_label }}" class="form-label">Employee:</label>
+                            {{ form.is_employee|add_class:"form-check-input" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.is_associated_doctor.id_for_label }}" class="form-label">Associated Doctor:</label>
+                            {{ form.is_associated_doctor|add_class:"form-check-input" }}
+                        </div>
+                    </div>
+    
+                    <!-- Row 4: Change Password -->
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="change-password-toggle" name="change_password" onchange="togglePasswordFields()">
+                        <label for="change-password-toggle" class="form-check-label">Change Password</label>
+                    </div>
+    
+                    <!-- Password Fields (Hidden by Default) -->
+                    <div id="password-fields" style="display: none;">
+                        <div class="row gx-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.password.id_for_label }}" class="form-label">Password:</label>
+                                {{ form.password|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.confirm_password.id_for_label }}" class="form-label">Confirm Password:</label>
+                                {{ form.confirm_password|add_class:"form-control" }}
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Save and Close Buttons -->
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary me-2">Save Changes</button>
+                        <a href="{% url 'manage_accounts' %}" class="btn btn-secondary">Close</a>
+                    </div>
+                </form>
+            </div>
         </div>
-        
-        <div>
-            <label for="{{ form.confirm_password.id_for_label }}">Confirm Password:</label>
-            {{ form.confirm_password }}
-        </div>
     </div>
-
-    <button type="submit">Save Changes</button>
-    <button type="button" onclick="goBack()">Back</button> <!-- Back button -->
-</form>
-
-<script>
-    const changePasswordCheckbox = document.getElementById('id_change_password');
-    const passwordFields = document.getElementById('password-fields');
-
-    changePasswordCheckbox.addEventListener('change', function() {
-        if (changePasswordCheckbox.checked) {
-            passwordFields.style.display = 'block';
-        } else {
-            passwordFields.style.display = 'none';
+    
+    <script>
+        // Toggle Password Fields Visibility
+        function togglePasswordFields() {
+            const passwordFields = document.getElementById('password-fields');
+            const toggle = document.getElementById('change-password-toggle');
+            if (toggle.checked) {
+                passwordFields.style.display = 'block';
+            } else {
+                passwordFields.style.display = 'none';
+            }
         }
-    });
-
-    function goBack() {
-        window.history.back();
-    }
-</script>
-
+    </script>
+    
 {% endblock %}
