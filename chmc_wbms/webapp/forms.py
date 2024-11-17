@@ -1,5 +1,5 @@
 from django import forms
-from .models import CustomUser
+from .models import CustomUser, Appointment, ServiceType
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 
@@ -290,3 +290,18 @@ class EditProfileForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+    
+class AppointmentForm(forms.ModelForm):
+    service_types = forms.ModelMultipleChoiceField(
+        queryset=ServiceType.objects.all(),
+        widget=forms.CheckboxSelectMultiple,  # Allows multiple selections using checkboxes
+        required=True
+    )
+
+    class Meta:
+        model = Appointment
+        fields = ['client_name', 'description', 'service_types', 'appointment_date', 'appointment_time']
+        widgets = {
+            'appointment_date': forms.DateInput(attrs={'type': 'date'}),
+            'appointment_time': forms.TimeInput(attrs={'type': 'time'}),
+        }

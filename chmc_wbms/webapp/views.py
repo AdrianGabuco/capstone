@@ -6,13 +6,13 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count
-from webapp.models import Appointment, Patient, Payment, CustomUser
+from webapp.models import Appointment, Patient, Payment, CustomUser, ServiceType
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from datetime import timedelta
-from .forms import UserCreationForm, EditAccountForm, EditProfileForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm
 from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
@@ -181,9 +181,33 @@ def create_account_view(request):
 
 @user_passes_test(lambda u: u.is_employee)
 def employee_dashboard_view(request):
-       account = request.user
-       context = {'account': account}
-       return render(request, 'employee/employee_dashboard.html', context)
+    account = request.user
+    # Fetch all appointments and service types for the dashboard
+    appointments = Appointment.objects.all()  # or any filtering needed
+    service_types = ServiceType.objects.all()
+
+    if request.method == 'POST' and 'add_appointment' in request.POST:
+        form = AppointmentForm(request.POST)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            appointment.save()  # Save the appointment
+            form.save_m2m()  # Save many-to-many fields (service types)
+            
+            # Show success message
+            messages.success(request, 'Appointment has been scheduled successfully.')
+            return redirect('employee_dashboard')  # Redirect to the dashboard to refresh
+        
+    else:
+        form = AppointmentForm()
+
+    context = {
+        'appointments': appointments,
+        'service_types': service_types,
+        'form': form,
+        'account': account,
+    }
+
+    return render(request, 'employee/employee_dashboard.html', context)
 
 @login_required
 def edit_account_view(request, account_id):
@@ -249,7 +273,30 @@ def assoc_doc_readings_view(request):
 @user_passes_test(lambda u: u.is_employee)
 def associated_doctors_view(request):
        account = request.user
-       context = {'account': account}
+       associated_doctors = CustomUser.objects.filter(is_associated_doctor=True)
+       context = {
+           'account': account,
+           'associated_doctors': associated_doctors
+           }
+       
        return render(request, 'employee/associated_doctors.html', context)
 
+def add_appointment(request):
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            appointment.save()
+            form.save_m2m()
+            return redirect('employee_dashboard')  # Redirect back to dashboard after saving
+    else:
+        form = AppointmentForm()
 
+    # Get the list of service types to display in the modal
+    service_types = ServiceType.objects.all()
+
+    context = {
+        'form': form,
+        'service_types': service_types,
+    }
+    return render(request, 'employee/add_appointment.html', context)

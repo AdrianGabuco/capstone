@@ -33,15 +33,6 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.patient.name} - {self.amount} via {self.get_method_display()}"
     
-class Appointment(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=timezone.now)
-    description = models.TextField()
-
-    def __str__(self):
-        return f"{self.patient.name} with {self.doctor.user.username} on {self.date}"
-
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -89,3 +80,27 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.email} ({self.get_full_name()})"
+    
+class ServiceType(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+    
+class Appointment(models.Model):
+    client_name = models.CharField(max_length=100, default="Client")
+    description = models.TextField()
+    service_types = models.ManyToManyField(ServiceType, through='AppointmentServiceType')
+    appointment_date = models.DateField(default=timezone.now)
+    appointment_time = models.TimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Appointment for {self.client_name} on {self.appointment_date}"
+
+class AppointmentServiceType(models.Model):
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
+    service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.appointment} - {self.service_type}"

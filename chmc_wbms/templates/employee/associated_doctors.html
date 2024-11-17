@@ -6,4 +6,29 @@
 
 <h2>Associated Doctors</h2>
 
+
+{% if associated_doctors %}
+<div class="row">
+    <div class="doctor-list">
+        {% for doctor in associated_doctors %}
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <!-- Display the doctor's image, use a placeholder if no image is provided -->
+                <img src="{{ doctor.image.url }}" alt="{{ doctor.get_full_name }}" />
+            </div>
+            <div class="card">
+                
+                <h5 class="card-title">{{ doctor.prefix }} {{ doctor.first_name }} {{ doctor.last_name }}</h3>
+                <p><strong>Contact:</strong> {{ doctor.mobile_number }}</p>
+                <p><strong>Email:</strong> {{ doctor.email }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+{% else %}
+    <p>No associated doctors found.</p>
+</div>    
+{% endif %}
+
 {% endblock %}
