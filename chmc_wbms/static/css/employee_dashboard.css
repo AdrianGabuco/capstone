@@ -1,0 +1,35 @@
+.form-container {
+    width: 1076px;
+    height: 460px;
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 20px;
+    box-sizing: border-box; /* Ensure padding is included in the width/height */
+    overflow-y: auto; /* Add scrolling for overflow content */
+    border: 1px solid #ddd; /* Optional: Border for better visual clarity */
+    border-radius: 8px; /* Optional: Rounded corners */
+    background-color: #f9f9f9; /* Optional: Background color */
+}
+.form-container h2 {
+    text-align: center; /* Center the heading */
+}
+
+.card {
+    margin: 0; /* Remove extra margin to fit height */
+}
+
+.card-body {
+    padding: 15px; /* Reduce padding inside the card */
+}
+
+.row.gx-3 > [class*="col-"] {
+    padding-right: 8px;
+    padding-left: 8px; /* Adjust gutter spacing to reduce field distance */
+}
+
+.btn {
+    font-size: 14px; /* Reduce button size slightly */
+}
+
+#password-fields {
+    padding-top: 10px; /* Add spacing for password fields */
+}
