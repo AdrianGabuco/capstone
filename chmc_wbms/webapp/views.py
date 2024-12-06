@@ -300,3 +300,9 @@ def add_appointment(request):
         'service_types': service_types,
     }
     return render(request, 'employee/add_appointment.html', context)
+
+@user_passes_test(lambda u: u.is_employee)
+def employee_examination_view(request):
+       account = request.user
+       context = {'account': account}
+       return render(request, 'employee/examination.html', context)
