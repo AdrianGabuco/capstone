@@ -7,10 +7,10 @@
 {% comment %} <h2>Examination</h2> {% endcomment %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Examination</h2>
-    <button class="btn btn-outline-primary" data-toggle="modal" data-target="#appointmentModal">
-        Add New Examination
-    </button>
+  <h2>Examination</h2>
+  <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">
+    Add New Examination
+</a>
 </div>
 
 <body class="bg-light">
@@ -23,7 +23,9 @@
                 <th>PATIENT ID</th>
                 <th>FULL NAME</th>
                 <th>TYPE OF SERVICE</th>
-                <th>APPOINTMENT DATE</th>
+                <th>EXAMINATION DATE</th>
+                <th>PAYMENT METHOD</th>
+                <th>PAYMENT AMMOUNT</th>
               </tr>
             </thead>
             <tbody>
@@ -62,4 +64,101 @@
         </div>
       </div>
 
+<!-- Modal for Adding New Examination -->
+<div class="modal fade" id="addExaminationModal" tabindex="-1" aria-labelledby="addExaminationLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="addExaminationLabel">Add New Examination</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="addExaminationForm">
+                  {% csrf_token %}
+                  <!-- Patient Information -->
+                  <div class="mb-3">
+                      <label for="patientID" class="form-label">Patient ID</label>
+                      <input type="text" id="patientID" name="patient_id" class="form-control" placeholder="Enter Patient ID or leave blank for new patient">
+                  </div>
+                  <div id="newPatientFields">
+                      <div class="row mb-3">
+                          <div class="col-md-4">
+                              <label for="firstName" class="form-label">First Name</label>
+                              <input type="text" id="firstName" name="first_name" class="form-control">
+                          </div>
+                          <div class="col-md-4">
+                              <label for="lastName" class="form-label">Last Name</label>
+                              <input type="text" id="lastName" name="last_name" class="form-control">
+                          </div>
+                          <div class="col-md-4">
+                              <label for="middleName" class="form-label">Middle Name/Initial (Optional)</label>
+                              <input type="text" id="middleName" name="middle_name" class="form-control">
+                          </div>
+                      </div>
+                      <div class="row mb-3">
+                          <div class="col-md-4">
+                              <label for="age" class="form-label">Age</label>
+                              <input type="number" id="age" name="age" class="form-control">
+                          </div>
+                          <div class="col-md-4">
+                              <label for="sex" class="form-label">Sex</label>
+                              <select id="sex" name="sex" class="form-select">
+                                  <option value="Male">Male</option>
+                                  <option value="Female">Female</option>
+                              </select>
+                          </div>
+                          <div class="col-md-4">
+                              <label for="contactNumber" class="form-label">Contact Number</label>
+                              <input type="text" id="contactNumber" name="contact_number" class="form-control">
+                          </div>
+                      </div>
+                      <div class="mb-3">
+                          <label for="address" class="form-label">Address</label>
+                          <textarea id="address" name="address" class="form-control"></textarea>
+                      </div>
+                  </div>
+                  <!-- Examination Details -->
+                  <div class="mb-3">
+                      <label for="services" class="form-label">Service Type</label>
+                      {% for service in service_types %}
+                      <select id="services" name="services" class="form-select" multiple>
+                          <option value="{{ service.id }}">{{ service.name }}</option>
+                      </select>
+                      {% endfor %}
+                  </div>
+                  <div class="mb-3">
+                      <label for="doctor" class="form-label">Attending Doctor</label>
+                      <select id="doctor" name="doctor" class="form-select">
+                          <option value="Clinic Doctor">Clinic Doctor</option>
+                          <option value="Dr. Smith">Dr. Smith</option>
+                      </select>
+                  </div>
+                  <!-- Webcam for Picture -->
+                  <div class="mb-3">
+                      <label for="webcam" class="form-label">Take Picture</label>
+                      <div id="webcam"></div>
+                      <button type="button" class="btn btn-outline-secondary mt-2" id="captureImage">Capture</button>
+                  </div>
+                  <button type="button" class="btn btn-primary" id="proceedToPayment">Add Examination</button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="paymentModalLabel">Select Payment Method</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <button type="button" class="btn btn-outline-secondary" id="paymentLater">Select Payment Later</button>
+              <button type="button" class="btn btn-primary" id="proceedWithPayment">Select Payment Method</button>
+          </div>
+      </div>
+  </div>
+</div>
 {% endblock %}

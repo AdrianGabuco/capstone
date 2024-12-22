@@ -1,5 +1,5 @@
 {% load static %}
-     
+
 <div class="headerheaderlog"> 
     <div class="row-1">
         <div class="rowheaderlogo">
@@ -14,20 +14,25 @@
             <h4 class="admin ui heading size-headinglg-name">ADMIN</h4>
             <div class="rowlinetwo_one">
                 <div class="linetwo_one"></div>
-                <h4 class="ui heading size-headinglg-logout"><a href="{% url 'create_account' %}">CREATE ACCOUNT</a></h4>
+                <!-- Trigger Create Account Modal -->
+                <h4 class="ui heading size-headinglg-logout">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#createAccountModal">CREATE ACCOUNT</a>
+                </h4>
             </div>
             <div class="rowlinetwo_one">
                 <div class="linetwo_one"></div>
-                <h4 class="ui heading size-headinglg-logout"><a href="{% url 'admin_logout' %}" data-bs-toggle="modal" data-bs-target="#exampleModal">LOGOUT</a></h4>
+                <h4 class="ui heading size-headinglg-logout">
+                    <a href="{% url 'admin_logout' %}" data-bs-toggle="modal" data-bs-target="#exampleModal">LOGOUT</a>
+                </h4>
             </div>
 
-            <!-- Modal -->
+            <!-- Logout Modal -->
             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">CONFIRMATION</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title" id="exampleModalLabel">CONFIRMATION</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             Are you sure you want to Logout?
@@ -38,6 +43,129 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Create Account Modal -->
+            <div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createAccountLabel">Create New Account</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Include the Create Account form here -->
+                            <div class="container">
+                                {% if messages %}
+                                    <div class="alert-messages">
+                                        {% for message in messages %}
+                                            <div class="alert alert-{{ message.tags }}" role="alert">
+                                                {{ message }}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <form method="post" enctype="multipart/form-data" onsubmit="return validatePassword()" action="{% url 'create_account' %}">
+                                    {% csrf_token %}
+                                    <div class="form-floating mb-3">
+                                        <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name" required>
+                                        <label for="floatingFirst">First Name</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name" required>
+                                        <label for="floatingLast">Last Name</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input name="middle_initial" type="text" class="form-control rounded-3" id="floatingMiddle" placeholder="Middle Name">
+                                        <label for="floatingMiddle">Middle Name (Optional)</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <select id="prefix" name="prefix" class="form-select">
+                                            <option value="" selected>Select Prefix</option>
+                                            <option value="Dr.">Dr.</option>
+                                            <option value="Dra.">Dra.</option>
+                                        </select>
+                                        <label for="prefix" class="form-label">Prefix (Optional)</label>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h5 class="mb-2">Account Type</h5>
+                                        <div class="form-check form-check-inline">
+                                            <input type="radio" class="form-check-input" name="account_type" id="accountEmployee" value="employee" required checked>
+                                            <label class="form-check-label" for="accountEmployee">Employee</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="radio" class="form-check-input" name="account_type" id="accountDoctor" value="assoc_doctor" required>
+                                            <label class="form-check-label" for="accountDoctor">Associated Doctor</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="radio" class="form-check-input" name="account_type" id="clinicDoctor" value="clinic_doctor" required>
+                                            <label class="form-check-label" for="clinicDoctor">Clinic Doctor</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="tel" class="form-control rounded-3" id="floatingPhone" placeholder="Phone Number" name="mobile_number" required>
+                                        <label for="floatingPhone">Phone Number</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="email" class="form-control rounded-3" id="floatingInput" placeholder="Email" name="email" required>
+                                        <label for="floatingInput">Email address</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password" name="password" required>
+                                        <label for="floatingPassword">Password</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="password" class="form-control rounded-3" id="floatingConfirmPassword" placeholder="Confirm Password" name="confirm_password" required>
+                                        <label for="floatingConfirmPassword">Confirm Password</label>
+                                    </div>
+                                    <div class="mb-3" id="signatureField" style="display: none;">
+                                        <label for="signatureUpload" class="form-label">Upload Signature</label>
+                                        <input type="file" class="form-control" id="signatureUpload" name="signature_image">
+                                    </div>
+                                    <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Create Account</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Function to check if passwords match
+    function validatePassword() {
+        const password = document.getElementById("floatingPassword").value;
+        const confirmPassword = document.getElementById("floatingConfirmPassword").value;
+        
+        if (password !== confirmPassword) {
+            alert("Passwords do not match!");
+            return false; // Prevents form submission
+        }
+        return true; // Allows form submission
+    }
+  
+    // Function to toggle signature field visibility
+    document.addEventListener('DOMContentLoaded', function () {
+        const accountTypeRadios = document.querySelectorAll('input[name="account_type"]');
+        const signatureField = document.getElementById('signatureField');
+  
+        accountTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                if (this.value === 'assoc_doctor' || this.value === 'clinic_doctor') {
+                    signatureField.style.display = 'block';
+                } else {
+                    signatureField.style.display = 'none';
+                }
+            });
+        });
+  
+        // Initialize visibility on page load
+        const checkedRadio = document.querySelector('input[name="account_type"]:checked');
+        if (checkedRadio && (checkedRadio.value === 'assoc_doctor' || checkedRadio.value === 'clinic_doctor')) {
+            signatureField.style.display = 'block';
+        }
+    });
+</script>
+  

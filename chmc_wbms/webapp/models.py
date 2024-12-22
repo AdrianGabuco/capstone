@@ -3,36 +3,6 @@ from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
 
-class Patient(models.Model):
-    name = models.CharField(max_length=100)
-    age = models.IntegerField()
-    address = models.TextField()
-    phone = models.CharField(max_length=15)
-
-    def __str__(self):
-        return self.name
-
-class Doctor(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    specialization = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.user.username
-    
-class Payment(models.Model):
-    PAYMENT_METHODS = [
-        ('cash', 'Cash'),
-        ('gcash', 'GCash'),
-    ]
-
-    patient = models.ForeignKey('Patient', on_delete=models.CASCADE)  # Reference to the patient
-    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
-    date = models.DateTimeField(default=timezone.now)  # Date of payment
-    method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cash')  # Payment method
-
-    def __str__(self):
-        return f"{self.patient.name} - {self.amount} via {self.get_method_display()}"
-    
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -55,6 +25,27 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
+    
+
+class ServiceType(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class Patient(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    age = models.PositiveIntegerField()
+    sex = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')])
+    address = models.TextField()
+    contact_number = models.CharField(max_length=15)
+    image = models.ImageField(upload_to='patient_images/', blank=True, null=True)
+
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"  # Returns full name
 
 class CustomUser(AbstractUser):
 
@@ -71,7 +62,10 @@ class CustomUser(AbstractUser):
     mobile_number = models.CharField(max_length=15, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
     is_associated_doctor = models.BooleanField(default=False)
+    is_clinic_doctor = models.BooleanField(default=False)
     image = models.ImageField(upload_to='profile_pics/', blank=True, null=True, default='../static/image/profile_ICON.png')
+    signature_image = models.ImageField(upload_to='signatures/', blank=True, null=True)
+
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []  # Make sure `username` is not required
@@ -81,11 +75,7 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.email} ({self.get_full_name()})"
     
-class ServiceType(models.Model):
-    name = models.CharField(max_length=50)
 
-    def __str__(self):
-        return self.name
     
 class Appointment(models.Model):
     client_name = models.CharField(max_length=100, default="Client")
@@ -104,3 +94,29 @@ class AppointmentServiceType(models.Model):
 
     def __str__(self):
         return f"{self.appointment} - {self.service_type}"
+    
+    
+class Examination(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='examinations', default=1)
+    service_types = models.ManyToManyField(ServiceType)
+    attending_doctor = models.ForeignKey(settings.AUTH_USER_MODEL, limit_choices_to={
+        'is_associated_doctor': True, 'is_clinic_doctor': True
+    }, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Examination for {self.patient}"
+    
+class Payment(models.Model):
+    PAYMENT_METHODS = [
+        ('cash', 'Cash'),
+        ('gcash', 'GCash'),
+    ]
+    examination = models.ForeignKey(Examination, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
+    date = models.DateTimeField(default=timezone.now)  # Date of payment
+    method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cash')  # Payment method
+    status = models.CharField(max_length=100, choices=[('Paid', 'Paid'), ('Pending', 'Pending')], default='Pending')
+
+    def __str__(self):
+        return f"{self.examination.id} - {self.amount} via {self.get_method_display()}"

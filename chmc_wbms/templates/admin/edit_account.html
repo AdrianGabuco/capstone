@@ -4,92 +4,95 @@
 {% block title %}Edit Account{% endblock %}
 
 {% block content %}
-{% load widget_tweaks %}
+{% load static widget_tweaks %}
+<!-- Modal for Editing Account -->
 <div class="form-container">
     <h2 class="mb-4">Edit Account</h2>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <!-- First Name, Last Name, and Prefix in the same row -->
-        <div class="row mb-3">
-            <!-- First Name -->
-            <div class="col-md-4">
-                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name:</label>
-                {{ form.first_name|add_class:"form-control" }}
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <!-- Include form fields similar to the edit form in your current template -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name:</label>
+                            {{ form.first_name|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name:</label>
+                            {{ form.last_name|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.prefix.id_for_label }}" class="form-label">Prefix:</label>
+                            {{ form.prefix|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email:</label>
+                        {{ form.email|add_class:"form-control" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Account Type:</label>
+                        <div class="form-check">
+                            {{ form.is_employee|add_class:"form-check-input" }}
+                            <label for="{{ form.is_employee.id_for_label }}" class="form-check-label">Employee</label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.is_associated_doctor|add_class:"form-check-input" }}
+                            <label for="{{ form.is_associated_doctor.id_for_label }}" class="form-check-label">Associated Doctor</label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.is_clinic_doctor|add_class:"form-check-input" }}
+                            <label for="{{ form.is_clinic_doctor.id_for_label }}" class="form-check-label">Clinic Doctor</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.signature_image.id_for_label }}" class="form-label">Signature:</label>
+                        {% if form.instance.signature_image %}
+                            <div>
+                                <img src="{{ form.instance.signature_image.url }}" alt="Current Signature" style="max-width: 200px; margin-bottom: 10px;">
+                                <p>Current Signature</p>
+                            </div>
+                        {% endif %}
+                        {{ form.signature_image|add_class:"form-control" }}
+                        <small class="form-text text-muted">Change the doctor's signature (only for Associated Doctor or Clinic Doctor).</small>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" id="id_change_password" name="change_password" class="form-check-input">
+                        <label for="id_change_password" class="form-check-label">Change Password</label>
+                    </div>
+                    <div id="password-fields" class="mb-3" style="display: none;">
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Password:</label>
+                            {{ form.password|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.confirm_password.id_for_label }}" class="form-label">Confirm Password:</label>
+                            {{ form.confirm_password|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">Back</button>
+                    </div>
+                </form>
             </div>
-
-            <!-- Last Name -->
-            <div class="col-md-4">
-                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name:</label>
-                {{ form.last_name|add_class:"form-control" }}
-            </div>
-
-            <!-- Prefix -->
-            <div class="col-md-2">
-                <label for="{{ form.prefix.id_for_label }}" class="form-label">Prefix:</label>
-                {{ form.prefix|add_class:"form-control" }}
-            </div>
-        </div>
-
-        <!-- Email -->
-        <div class="mb-3">
-            <label for="{{ form.email.id_for_label }}" class="form-label">Email:</label>
-            {{ form.email|add_class:"form-control" }}
-        </div>
-
-        <!-- Employee -->
-        <div class="form-check mb-3">
-            {{ form.is_employee|add_class:"form-check-input" }}
-            <label for="{{ form.is_employee.id_for_label }}" class="form-check-label">Employee</label>
-        </div>
-
-        <!-- Associated Doctor -->
-        <div class="form-check mb-3">
-            {{ form.is_associated_doctor|add_class:"form-check-input" }}
-            <label for="{{ form.is_associated_doctor.id_for_label }}" class="form-check-label">Associated Doctor</label>
-        </div>
-
-        <!-- Change Password -->
-        <div class="form-check mb-3">
-            {{ form.change_password|add_class:"form-check-input" }}
-            <label for="{{ form.change_password.id_for_label }}" class="form-check-label">Change Password</label>
-        </div>
-
-        <!-- Password fields (conditionally displayed) -->
-        <div id="password-fields" class="mb-3" style="display: {% if form.change_password.value == 'on' %}block{% else %}none{% endif %};">
-            <div class="mb-3">
-                <label for="{{ form.password.id_for_label }}" class="form-label">Password:</label>
-                {{ form.password|add_class:"form-control" }}
-            </div>
-            
-            <div class="mb-3">
-                <label for="{{ form.confirm_password.id_for_label }}" class="form-label">Confirm Password:</label>
-                {{ form.confirm_password|add_class:"form-control" }}
-            </div>
-        </div>
-
-        <!-- Buttons -->
-        <div class="d-flex gap-2 justify-content-center">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <button type="button" class="btn btn-secondary" onclick="goBack()">Back</button>
-        </div>
-    </form>
-</div>
 
 <script>
-    const changePasswordCheckbox = document.getElementById('id_change_password');
-    const passwordFields = document.getElementById('password-fields');
+    document.addEventListener('DOMContentLoaded', function () {
+        const changePasswordCheckbox = document.getElementById('id_change_password');
+        const passwordFields = document.getElementById('password-fields');
 
-    changePasswordCheckbox.addEventListener('change', function() {
-        if (changePasswordCheckbox.checked) {
-            passwordFields.style.display = 'block';
-        } else {
-            passwordFields.style.display = 'none';
-        }
+        changePasswordCheckbox.addEventListener('change', function () {
+            if (changePasswordCheckbox.checked) {
+                passwordFields.style.display = 'block';
+            } else {
+                passwordFields.style.display = 'none';
+            }
+        });
     });
-
     function goBack() {
         window.history.back();
     }
 </script>
+
 {% endblock %}
+

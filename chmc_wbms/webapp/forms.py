@@ -1,23 +1,26 @@
 from django import forms
-from .models import CustomUser, Appointment, ServiceType
+from .models import CustomUser, Appointment, ServiceType, Patient, Examination, Payment
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 class UserCreationForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = [
-            'email', 
-            'first_name', 
-            'last_name', 
-            'middle_initial', 
-            'prefix', 
-            'mobile_number', 
-            'password', 
-            'confirm_password', 
-            'image', 
-            'is_employee', 
-            'is_associated_doctor'
+            'email',
+            'first_name',
+            'last_name',
+            'middle_initial',
+            'prefix',
+            'mobile_number',
+            'password',
+            'confirm_password',
+            'image',
+            'is_employee',
+            'is_associated_doctor',
+            'is_clinic_doctor',
+            'signature_image',
         ]
         widgets = {
             'first_name': forms.TextInput(attrs={
@@ -54,10 +57,17 @@ class UserCreationForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={
                 'class': 'form-control-file'
             }),
+            'signature_image': forms.ClearableFileInput(attrs={
+                'class': 'form-control-file',
+                'style': 'display: none;'  # Initially hidden
+            }),
             'is_employee': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
             'is_associated_doctor': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_clinic_doctor': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
@@ -73,9 +83,21 @@ class UserCreationForm(forms.ModelForm):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
+        is_associated_doctor = cleaned_data.get('is_associated_doctor')
+        is_clinic_doctor = cleaned_data.get('is_clinic_doctor')
+        signature_image = cleaned_data.get('signature_image')
 
+        # Check if passwords match
         if password and confirm_password and password != confirm_password:
             raise forms.ValidationError("Passwords do not match.")
+
+        # Require signature for doctors
+        if (is_associated_doctor or is_clinic_doctor) and not signature_image:
+            raise forms.ValidationError("Signature image is required for associated and clinic doctors.")
+
+        # Check for multiple clinic doctors
+        if is_clinic_doctor and CustomUser.objects.filter(is_clinic_doctor=True).exists():
+            raise forms.ValidationError("A clinic doctor already exists. You cannot create another clinic doctor account.")
 
         return cleaned_data
 
@@ -84,11 +106,14 @@ class UserCreationForm(forms.ModelForm):
         if CustomUser.objects.filter(email=email).exists():
             raise forms.ValidationError("This email is already in use.")
         return email
+
 class UserChangeForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['email', 'first_name', 'last_name', 'middle_initial', 'prefix', 'mobile_number', 'image']
     
+
+
 class EditAccountForm(forms.ModelForm):
     prefix = forms.ChoiceField(
         choices=CustomUser.PREFIX_CHOICES,
@@ -100,7 +125,7 @@ class EditAccountForm(forms.ModelForm):
         label="Change Password",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
-    
+
     # Password fields
     password = forms.CharField(
         required=False,
@@ -119,6 +144,13 @@ class EditAccountForm(forms.ModelForm):
         label="Confirm Password"
     )
 
+    # Signature field for Associated or Clinic Doctor
+    signature_image = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        label="Signature"
+    )
+
     class Meta:
         model = CustomUser
         fields = [
@@ -128,7 +160,9 @@ class EditAccountForm(forms.ModelForm):
             'prefix', 
             'is_employee', 
             'is_associated_doctor', 
+            'is_clinic_doctor', 
             'image', 
+            'signature_image',  # Added signature field
             'password', 
             'confirm_password', 
             'change_password'
@@ -155,6 +189,9 @@ class EditAccountForm(forms.ModelForm):
             'is_associated_doctor': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'is_clinic_doctor': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
         }
 
     def __init__(self, *args, **kwargs):
@@ -162,6 +199,10 @@ class EditAccountForm(forms.ModelForm):
         # Set the initial password value only if it’s an update form
         if self.instance.pk:
             self.fields['password'].initial = self.instance.password
+
+            # If the user is an associated or clinic doctor, show the current signature
+            if self.instance.is_associated_doctor or self.instance.is_clinic_doctor:
+                self.fields['signature_image'].initial = self.instance.signature_image
 
     def clean(self):
         cleaned_data = super().clean()
@@ -183,6 +224,7 @@ class EditAccountForm(forms.ModelForm):
             cleaned_data['confirm_password'] = self.instance.password
 
         return cleaned_data
+
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -305,3 +347,33 @@ class AppointmentForm(forms.ModelForm):
             'appointment_date': forms.DateInput(attrs={'type': 'date'}),
             'appointment_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+
+class ExaminationForm(forms.Form):
+    # Patient fields
+    first_name = forms.CharField(max_length=100, label="First Name")
+    last_name = forms.CharField(max_length=100, label="Last Name")
+    middle_name = forms.CharField(max_length=100, required=False, label="Middle Name")
+    age = forms.IntegerField(label="Age")
+    sex = forms.ChoiceField(choices=[('Male', 'Male'), ('Female', 'Female')], label="Sex")
+    address = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), label="Address")
+    contact_number = forms.CharField(max_length=15, label="Contact Number")
+    image = forms.ImageField(required=False, label="Capture Patient Image")  # Field remains the same in the backend
+
+    # Examination fields
+    service_types = forms.ModelMultipleChoiceField(
+        queryset=ServiceType.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label="Service Types"
+    )
+    attending_doctor = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(Q(is_associated_doctor=True) | Q(is_clinic_doctor=True)),
+        label="Attending Doctor"
+    )
+
+    # Payment fields
+    method = forms.ChoiceField(
+        choices=Payment.PAYMENT_METHODS,
+        widget=forms.RadioSelect,
+        label="Payment Method"
+    )
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")

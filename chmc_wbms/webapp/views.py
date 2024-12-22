@@ -1,3 +1,5 @@
+import base64
+from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -5,14 +7,14 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
-from django.db.models import Sum, Count
-from webapp.models import Appointment, Patient, Payment, CustomUser, ServiceType
+from django.db.models import Sum, Count, Q
+from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from datetime import timedelta
-from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm
 from django.views.decorators.csrf import csrf_protect
 
 def login_view(request):
@@ -87,7 +89,8 @@ def employee_login_view(request):
 @user_passes_test(lambda u: u.is_superuser)
 def manage_account_view(request):
     # Filter out the superuser accounts and get only employees and associated doctors
-    accounts = CustomUser.objects.exclude(is_superuser=True).filter(is_employee=True) | CustomUser.objects.exclude(is_superuser=True).filter(is_associated_doctor=True)
+    accounts = CustomUser.objects.exclude(is_superuser=True).filter(Q(is_employee=True) | Q(is_associated_doctor=True) | Q(is_clinic_doctor=True)
+    )
 
     # Context to pass to the template
     context = {
@@ -147,7 +150,7 @@ def employee_logout_view(request):
 
 def create_account_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserCreationForm(request.POST, request.FILES)  # Include `request.FILES` for file uploads
         if form.is_valid():
             # Save the new user
             user = form.save(commit=False)
@@ -156,20 +159,25 @@ def create_account_view(request):
             user.first_name = form.cleaned_data['first_name']
             user.last_name = form.cleaned_data['last_name']
             user.email = form.cleaned_data['email']
-            
-            # Save the user to database
-            user.save()
 
-            # Add additional fields to user profile
-
+            # Determine account type
             account_type = request.POST.get('account_type')  # Get the selected account type
             if account_type == 'employee':
                 user.is_employee = True
             elif account_type == 'assoc_doctor':
                 user.is_associated_doctor = True
+                user.signature_image = form.cleaned_data.get('signature_image')  # Add signature image
+            elif account_type == 'clinic_doctor':
+                # Check if a clinic doctor already exists
+                if CustomUser.objects.filter(is_clinic_doctor=True).exists():
+                    messages.error(request, "A clinic doctor account already exists.")
+                    return redirect('create_account')  # Redirect back to the form
+                user.is_clinic_doctor = True
+                user.signature_image = form.cleaned_data.get('signature_image')  # Add signature image
 
-
+            # Save the user to the database
             user.save()
+
             messages.success(request, "Account created successfully!")
             return redirect('admin_dashboard')
         else:
@@ -177,7 +185,7 @@ def create_account_view(request):
 
     else:
         form = UserCreationForm()
-    return render(request, 'admin/create_account.html', {'form': form})
+    return render(request, 'admin/admin_dashboard.html', {'form': form})
 
 @user_passes_test(lambda u: u.is_employee)
 def employee_dashboard_view(request):
@@ -306,3 +314,62 @@ def employee_examination_view(request):
        account = request.user
        context = {'account': account}
        return render(request, 'employee/examination.html', context)
+
+def get_patient(request, patient_id):
+    try:
+        patient = Patient.objects.get(id=patient_id)
+        return JsonResponse({
+            'success': True,
+            'patient': {
+                'id': patient.id,
+                'first_name': patient.first_name,
+                'last_name': patient.last_name,
+                'age': patient.age,
+                'sex': patient.sex,
+                'address': patient.address,
+                'contact_number': patient.contact_number,
+            }
+        })
+    except Patient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Patient not found.'})
+
+@user_passes_test(lambda u: u.is_employee)
+def add_examination(request):
+    account = request.user
+    if request.method == 'POST':
+        form = ExaminationForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Save Patient
+            patient = Patient.objects.create(
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                middle_name=form.cleaned_data['middle_name'],
+                age=form.cleaned_data['age'],
+                sex=form.cleaned_data['sex'],
+                address=form.cleaned_data['address'],
+                contact_number=form.cleaned_data['contact_number'],
+                image=form.cleaned_data['image']
+            )
+            
+            # Save Examination
+            examination = Examination.objects.create(
+                patient=patient,
+                attending_doctor=form.cleaned_data['attending_doctor']
+            )
+            examination.service_types.set(form.cleaned_data['service_types'])
+            
+            # Save Payment
+            Payment.objects.create(
+                examination=examination,
+                method=form.cleaned_data['method'],
+                amount=form.cleaned_data['amount']
+            )
+            
+            return redirect('employee_examination')  # Replace with your success page
+    else:
+        form = ExaminationForm()
+
+    return render(request, 'employee/add_examination.html', {
+        'form' : form,
+        'account' : account
+    })

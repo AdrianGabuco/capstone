@@ -27,6 +27,8 @@
                                 <strong>Account Type:</strong> Employee
                             {% elif account.is_associated_doctor %}
                                 <strong>Account Type:</strong> Associated Doctor
+                            {% elif account.is_clinic_doctor %}
+                                <strong>Account Type:</strong> Clinic Doctor
                             {% endif %}
                         </p>
                     </div>
@@ -48,10 +50,16 @@
                             </h5>
                         </div>
                         <div class="modal-body">
-                            <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% endif %}</p>
+                            <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% elif account.is_clinic_doctor %} Clinic Doctor{% endif %}</p>
                             <p><strong>Email:</strong> {{ account.email }}</p>
                             <p><strong>Mobile Number:</strong> {{ account.mobile_number }}</p>
-                            <!-- Add more fields here as needed -->
+                            <p>
+                                {% if account.is_associated_doctor %}
+                                <img src="{{ account.signature_image.url }}" class="card-img-top" alt="Account Image">
+                                {% elif account.is_clinic_doctor %}
+                                <img src="{{ account.signature_image.url }}" class="card-img-top" alt="Account Image">
+                                {% endif %}
+                            </p>
                         </div>
                         <div class="modal-footer">
                             <!-- Edit button redirects to an edit view -->

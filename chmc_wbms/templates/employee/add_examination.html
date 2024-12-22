@@ -1,0 +1,112 @@
+{% extends 'employee/employee_base.html' %}
+
+{% block title %}Add Examination{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Add New Examination</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Patient Information</legend>
+            <div>
+                <label for="id_first_name">{{ form.first_name.label }}</label>
+                {{ form.first_name }}
+            </div>
+            <div>
+                <label for="id_last_name">{{ form.last_name.label }}</label>
+                {{ form.last_name }}
+            </div>
+            <div>
+                <label for="id_middle_name">{{ form.middle_name.label }}</label>
+                {{ form.middle_name }}
+            </div>
+            <div>
+                <label for="id_age">{{ form.age.label }}</label>
+                {{ form.age }}
+            </div>
+            <div>
+                <label for="id_sex">{{ form.sex.label }}</label>
+                {{ form.sex }}
+            </div>
+            <div>
+                <label for="id_address">{{ form.address.label }}</label>
+                {{ form.address }}
+            </div>
+            <div>
+                <label for="id_contact_number">{{ form.contact_number.label }}</label>
+                {{ form.contact_number }}
+            </div>
+    
+            <!-- Webcam capture input -->
+            <div>
+                <label for="capture-image">Capture Patient Image</label>
+                <video id="webcam" width="100%" height="auto" autoplay></video>
+                <button type="button" id="capture-btn">Capture Image</button>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <input type="hidden" name="image" id="patient-image-hidden">
+            </div>
+        </fieldset>
+    
+        <fieldset>
+            <legend>Examination Information</legend>
+            <div>
+                <label for="id_service_types">{{ form.service_types.label }}</label>
+                {{ form.service_types }}
+            </div>
+            <div>
+                <label for="id_attending_doctor">{{ form.attending_doctor.label }}</label>
+                {{ form.attending_doctor }}
+            </div>
+        </fieldset>
+    
+        <fieldset>
+            <legend>Payment Information</legend>
+            <div>
+                <label for="id_method">{{ form.method.label }}</label>
+                {{ form.method }}
+            </div>
+            <div>
+                <label for="id_amount">{{ form.amount.label }}</label>
+                {{ form.amount }}
+            </div>
+        </fieldset>
+    
+        <button type="submit">Save</button>
+    </form>
+    
+    <script>
+        // Access the webcam and start streaming
+        const video = document.getElementById('webcam');
+        const captureButton = document.getElementById('capture-btn');
+        const canvas = document.getElementById('canvas');
+        const hiddenInput = document.getElementById('patient-image-hidden');
+    
+        // Start the webcam stream
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing webcam: ", err);
+            });
+    
+        // Capture the image and store it in a hidden input field
+        captureButton.addEventListener('click', () => {
+            // Draw the video frame to the canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+            // Convert canvas to image data (base64) and assign it to the hidden input
+            const imageData = canvas.toDataURL('image/png');
+            hiddenInput.value = imageData;
+    
+            // Optionally, stop the webcam stream after capture
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        });
+    </script>
+{% endblock %}
