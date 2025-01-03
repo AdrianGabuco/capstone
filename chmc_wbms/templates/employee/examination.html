@@ -4,161 +4,65 @@
 
 {% block content %}
 
-{% comment %} <h2>Examination</h2> {% endcomment %}
-
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Examination</h2>
   <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">
     Add New Examination
-</a>
+  </a>
 </div>
 
 <body class="bg-light">
-
     <div class="container my-5">
         <div class="table-responsive">
           <table class="table table-bordered text-center align-middle">
             <thead class="bg-primary text-white">
               <tr>
                 <th>PATIENT ID</th>
-                <th>FULL NAME</th>
+                <th>PATIENT NAME</th>
                 <th>TYPE OF SERVICE</th>
                 <th>EXAMINATION DATE</th>
                 <th>PAYMENT METHOD</th>
-                <th>PAYMENT AMMOUNT</th>
+                <th>PAYMENT STATUS</th>
               </tr>
             </thead>
             <tbody>
+              {% for exam in examinations %}
               <tr>
-                <td>PID001</td>
-                <td>John Doe</td>
-                <td>General Checkup</td>
-                <td>2024-01-25</td>
+                <!-- Patient Details -->
+                <td>{{ exam.patient.id }}</td>
+                <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>
+
+                <!-- Service Types -->
+                <td>
+                  {% for service in exam.service_types.all %}
+                    {{ service.name }}{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </td>
+
+                <!-- Examination Date -->
+                <td>{{ exam.date_created|date:"F j, Y, g:i a" }}</td>
+
+                <!-- Payment Details -->
+                <td>
+                  {% with exam.payment_set.first as payment %}
+                    {{ payment.method|default:"N/A" }}
+                  {% endwith %}
+                </td>
+                <td>
+                  {% with exam.payment_set.first as payment %}
+                    {{ payment.status|default:"No Payment" }}
+                  {% endwith %}
+                </td>
               </tr>
+              {% empty %}
               <tr>
-                <td>PID002</td>
-                <td>Jane Smith</td>
-                <td>Dental Cleaning</td>
-                <td>2024-02-10</td>
+                <td colspan="6" style="text-align: center;">No examination records found.</td>
               </tr>
-              <tr>
-                <td>PID003</td>
-                <td>Mark Wilson</td>
-                <td>Eye Checkup</td>
-                <td>2024-03-05</td>
-              </tr>
-              <tr>
-                <td>PID004</td>
-                <td>Emily Davis</td>
-                <td>Physical Therapy</td>
-                <td>2024-04-15</td>
-              </tr>
-              <tr>
-                <td>PID005</td>
-                <td>Michael Brown</td>
-                <td>Cardiology</td>
-                <td>2024-05-01</td>
-              </tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
-      </div>
+    </div>
+</body>
 
-<!-- Modal for Adding New Examination -->
-<div class="modal fade" id="addExaminationModal" tabindex="-1" aria-labelledby="addExaminationLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="addExaminationLabel">Add New Examination</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-              <form id="addExaminationForm">
-                  {% csrf_token %}
-                  <!-- Patient Information -->
-                  <div class="mb-3">
-                      <label for="patientID" class="form-label">Patient ID</label>
-                      <input type="text" id="patientID" name="patient_id" class="form-control" placeholder="Enter Patient ID or leave blank for new patient">
-                  </div>
-                  <div id="newPatientFields">
-                      <div class="row mb-3">
-                          <div class="col-md-4">
-                              <label for="firstName" class="form-label">First Name</label>
-                              <input type="text" id="firstName" name="first_name" class="form-control">
-                          </div>
-                          <div class="col-md-4">
-                              <label for="lastName" class="form-label">Last Name</label>
-                              <input type="text" id="lastName" name="last_name" class="form-control">
-                          </div>
-                          <div class="col-md-4">
-                              <label for="middleName" class="form-label">Middle Name/Initial (Optional)</label>
-                              <input type="text" id="middleName" name="middle_name" class="form-control">
-                          </div>
-                      </div>
-                      <div class="row mb-3">
-                          <div class="col-md-4">
-                              <label for="age" class="form-label">Age</label>
-                              <input type="number" id="age" name="age" class="form-control">
-                          </div>
-                          <div class="col-md-4">
-                              <label for="sex" class="form-label">Sex</label>
-                              <select id="sex" name="sex" class="form-select">
-                                  <option value="Male">Male</option>
-                                  <option value="Female">Female</option>
-                              </select>
-                          </div>
-                          <div class="col-md-4">
-                              <label for="contactNumber" class="form-label">Contact Number</label>
-                              <input type="text" id="contactNumber" name="contact_number" class="form-control">
-                          </div>
-                      </div>
-                      <div class="mb-3">
-                          <label for="address" class="form-label">Address</label>
-                          <textarea id="address" name="address" class="form-control"></textarea>
-                      </div>
-                  </div>
-                  <!-- Examination Details -->
-                  <div class="mb-3">
-                      <label for="services" class="form-label">Service Type</label>
-                      {% for service in service_types %}
-                      <select id="services" name="services" class="form-select" multiple>
-                          <option value="{{ service.id }}">{{ service.name }}</option>
-                      </select>
-                      {% endfor %}
-                  </div>
-                  <div class="mb-3">
-                      <label for="doctor" class="form-label">Attending Doctor</label>
-                      <select id="doctor" name="doctor" class="form-select">
-                          <option value="Clinic Doctor">Clinic Doctor</option>
-                          <option value="Dr. Smith">Dr. Smith</option>
-                      </select>
-                  </div>
-                  <!-- Webcam for Picture -->
-                  <div class="mb-3">
-                      <label for="webcam" class="form-label">Take Picture</label>
-                      <div id="webcam"></div>
-                      <button type="button" class="btn btn-outline-secondary mt-2" id="captureImage">Capture</button>
-                  </div>
-                  <button type="button" class="btn btn-primary" id="proceedToPayment">Add Examination</button>
-              </form>
-          </div>
-      </div>
-  </div>
-</div>
-
-<!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-md">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="paymentModalLabel">Select Payment Method</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-              <button type="button" class="btn btn-outline-secondary" id="paymentLater">Select Payment Later</button>
-              <button type="button" class="btn btn-primary" id="proceedWithPayment">Select Payment Method</button>
-          </div>
-      </div>
-  </div>
-</div>
 {% endblock %}

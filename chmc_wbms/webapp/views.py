@@ -1,4 +1,7 @@
 import base64
+import re
+from io import BytesIO
+from PIL import Image
 from django.core.files.base import ContentFile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -311,9 +314,15 @@ def add_appointment(request):
 
 @user_passes_test(lambda u: u.is_employee)
 def employee_examination_view(request):
-       account = request.user
-       context = {'account': account}
-       return render(request, 'employee/examination.html', context)
+    # Fetch examinations along with related patient and payment details
+    account = request.user
+    examinations = Examination.objects.select_related('patient').prefetch_related('service_types', 'payment_set')
+
+    context = {
+        'account' : account,
+        'examinations': examinations,
+    }
+    return render(request, 'employee/examination.html', context)
 
 def get_patient(request, patient_id):
     try:
@@ -333,43 +342,99 @@ def get_patient(request, patient_id):
     except Patient.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Patient not found.'})
 
+
 @user_passes_test(lambda u: u.is_employee)
 def add_examination(request):
     account = request.user
     if request.method == 'POST':
         form = ExaminationForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save Patient
-            patient = Patient.objects.create(
-                first_name=form.cleaned_data['first_name'],
-                last_name=form.cleaned_data['last_name'],
-                middle_name=form.cleaned_data['middle_name'],
-                age=form.cleaned_data['age'],
-                sex=form.cleaned_data['sex'],
-                address=form.cleaned_data['address'],
-                contact_number=form.cleaned_data['contact_number'],
-                image=form.cleaned_data['image']
-            )
-            
-            # Save Examination
-            examination = Examination.objects.create(
-                patient=patient,
-                attending_doctor=form.cleaned_data['attending_doctor']
-            )
-            examination.service_types.set(form.cleaned_data['service_types'])
-            
-            # Save Payment
-            Payment.objects.create(
-                examination=examination,
-                method=form.cleaned_data['method'],
-                amount=form.cleaned_data['amount']
-            )
-            
-            return redirect('employee_examination')  # Replace with your success page
+            try:
+                # Extract patient data
+                first_name = form.cleaned_data['first_name']
+                last_name = form.cleaned_data['last_name']
+                middle_name = form.cleaned_data['middle_name']
+                age = form.cleaned_data['age']
+                sex = form.cleaned_data['sex']
+                address = form.cleaned_data['address']
+                contact_number = form.cleaned_data['contact_number']
+
+                # Handle base64 image data from hidden input
+                base64_image = request.POST.get('image')
+                patient_image = None
+
+                if base64_image and base64_image.startswith('data:image/'):
+                    try:
+                        # Extract image data and decode base64
+                        format, imgstr = base64_image.split(';base64,')
+                        img_bytes = base64.b64decode(imgstr)
+
+                        # Validate MIME type (e.g., 'image/png', 'image/jpeg')
+                        if format not in ['data:image/png', 'data:image/jpeg']:
+                            raise ValueError("Unsupported image format")
+
+                        # Use PIL to save the image in PNG format
+                        image = Image.open(BytesIO(img_bytes))
+                        image_io = BytesIO()
+
+                        # Construct a sanitized filename
+                        filename = f"{last_name}_{first_name}"  # Use underscore for clarity
+                        filename = re.sub(r'[^\w\s,-]', '', filename).replace(' ', '_')
+
+                        # Ensure .png extension
+                        if not filename.endswith('.png'):
+                            filename += '.png'
+
+                        # Save image to BytesIO and create ContentFile
+                        image.save(image_io, format='PNG')
+                        patient_image = ContentFile(image_io.getvalue(), name=filename)
+                    except Exception as e:
+                        print(f"Image processing error: {e}")
+                        return render(request, 'employee/add_examination.html', {
+                            'form': form,
+                            'account': account,
+                            'error': "Error processing the patient image. Please try again."
+                        })
+
+                # Save Patient instance
+                patient = Patient.objects.create(
+                    first_name=first_name,
+                    last_name=last_name,
+                    middle_name=middle_name,
+                    age=age,
+                    sex=sex,
+                    address=address,
+                    contact_number=contact_number,
+                    image=patient_image
+                )
+
+                # Save Examination instance
+                examination = Examination.objects.create(
+                    patient=patient,
+                    attending_doctor=form.cleaned_data['attending_doctor']
+                )
+                examination.service_types.set(form.cleaned_data['service_types'])
+
+                # Save Payment instance
+                Payment.objects.create(
+                    examination=examination,
+                    method=form.cleaned_data['method'],
+                    amount=form.cleaned_data['amount'],
+                    status=form.cleaned_data['status']
+                )
+
+                return redirect('employee_examination')  # Replace with your success page
+            except Exception as e:
+                print(f"Error: {e}")
+                return render(request, 'employee/add_examination.html', {
+                    'form': form,
+                    'account': account,
+                    'error': "An unexpected error occurred. Please try again."
+                })
     else:
         form = ExaminationForm()
 
     return render(request, 'employee/add_examination.html', {
-        'form' : form,
-        'account' : account
+        'form': form,
+        'account': account
     })

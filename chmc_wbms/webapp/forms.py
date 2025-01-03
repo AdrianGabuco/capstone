@@ -357,7 +357,7 @@ class ExaminationForm(forms.Form):
     sex = forms.ChoiceField(choices=[('Male', 'Male'), ('Female', 'Female')], label="Sex")
     address = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), label="Address")
     contact_number = forms.CharField(max_length=15, label="Contact Number")
-    image = forms.ImageField(required=False, label="Capture Patient Image")  # Field remains the same in the backend
+    image = forms.CharField(required=False, label="Capture Patient Image")  # Field remains the same in the backend
 
     # Examination fields
     service_types = forms.ModelMultipleChoiceField(
@@ -377,3 +377,4 @@ class ExaminationForm(forms.Form):
         label="Payment Method"
     )
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
+    status = forms.ChoiceField(choices=[('Paid', 'Paid'), ('Pending', 'Pending')], label="Payment Status")

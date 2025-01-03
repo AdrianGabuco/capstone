@@ -99,9 +99,7 @@ class AppointmentServiceType(models.Model):
 class Examination(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='examinations', default=1)
     service_types = models.ManyToManyField(ServiceType)
-    attending_doctor = models.ForeignKey(settings.AUTH_USER_MODEL, limit_choices_to={
-        'is_associated_doctor': True, 'is_clinic_doctor': True
-    }, on_delete=models.CASCADE)
+    attending_doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
