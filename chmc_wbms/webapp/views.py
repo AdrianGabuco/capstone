@@ -1,5 +1,5 @@
-import base64
-import re
+import base64, re
+import os
 from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
@@ -16,9 +16,12 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
-from datetime import timedelta
+from datetime import datetime
 from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm
 from django.views.decorators.csrf import csrf_protect
+from docx import Document
+from docx.shared import Inches
+from django.conf import  settings
 
 def login_view(request):
     if request.method == 'POST':
@@ -423,6 +426,9 @@ def add_examination(request):
                     status=form.cleaned_data['status']
                 )
 
+                # Generate the document
+                generate_examination_document(examination)
+
                 return redirect('employee_examination')  # Replace with your success page
             except Exception as e:
                 print(f"Error: {e}")
@@ -438,3 +444,58 @@ def add_examination(request):
         'form': form,
         'account': account
     })
+
+
+def generate_examination_document(examination):
+    template_path = 'templates/examination_template.docx'
+    output_path = os.path.join(settings.MEDIA_ROOT, 'examination_documents')  # Store the relative path
+
+    # Load the document template
+    doc = Document(template_path)
+
+    # Populate the template with examination details
+    patient = examination.patient
+    doctor = examination.attending_doctor
+
+    patient_full_name = patient.get_full_name_with_middle_initial()
+    doctor_full_name = doctor.get_full_name_with_middle_initial()
+    file_number = examination.get_file_number()
+
+    # Fill the template with text
+    for paragraph in doc.paragraphs:
+        paragraph.text = paragraph.text.replace('{PATIENT_NAME}', patient_full_name)
+        paragraph.text = paragraph.text.replace('{AGE}', str(patient.age))
+        paragraph.text = paragraph.text.replace('{SEX}', patient.sex)
+        paragraph.text = paragraph.text.replace('{SERVICE_TYPE}', ', '.join([str(s) for s in examination.service_types.all()]))
+        paragraph.text = paragraph.text.replace('{DATE}', examination.date_created.strftime('%B %d, %Y'))
+        paragraph.text = paragraph.text.replace('{DOCTOR_NAME}', doctor_full_name)
+        paragraph.text = paragraph.text.replace('{FILE_NO}', file_number)
+
+    # Replace the {SIGNATURE} placeholder with the image
+    for paragraph in doc.paragraphs:
+        if '{SIGNATURE}' in paragraph.text:
+            paragraph.text = paragraph.text.replace('{SIGNATURE}', '')  # Clear placeholder text
+            if doctor.signature_image:
+                run = paragraph.add_run()
+                run.add_picture(doctor.signature_image.path, width=Inches(1.5))
+            break
+
+    # Access the footer and replace placeholders there
+    for section in doc.sections:
+        footer = section.footer
+        for paragraph in footer.paragraphs:
+            paragraph.text = paragraph.text.replace('{DOCTOR_NAME}', doctor_full_name)
+            if '{SIGNATURE}' in paragraph.text:
+                paragraph.text = paragraph.text.replace('{SIGNATURE}', '')  # Clear placeholder text
+                if doctor.signature_image:
+                    run = paragraph.add_run()
+                    run.add_picture(doctor.signature_image.path, width=Inches(1.5))
+
+    # Save the document
+    output_filename = f"{file_number}.docx"
+    output_full_path = os.path.join(output_path, output_filename)
+    doc.save(output_full_path)
+
+    # Attach the document to the Examination instance with the relative path
+    examination.document.name = os.path.relpath(output_full_path, settings.MEDIA_ROOT).replace(os.sep, '/')
+    examination.save()

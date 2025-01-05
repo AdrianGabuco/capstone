@@ -60,7 +60,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="{{ form.service_types.label }}" class="form-label">Service Type:</label>
-                        {{ form.service_types|add_class:"form-select" }}
+                        {{ form.service_types|add_class:"form-check" }}
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="{{ form.attending_doctor.label }}" class="form-label">Attending Doctor:</label>
@@ -74,7 +74,7 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.method.label }}" class="form-label">Payment Method:</label>
-                        {{ form.method|add_class:"form-select" }}
+                        {{ form.method|add_class:"form-check" }}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.amount.label }}" class="form-label">Amount:</label>

@@ -46,6 +46,11 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"  # Returns full name
+    
+    def get_full_name_with_middle_initial(self):
+        middle_initial = f"{self.middle_name[0].upper()}." if self.middle_name else ""
+        full_name = f"{self.first_name} {middle_initial} {self.last_name}".strip()
+        return full_name
 
 class CustomUser(AbstractUser):
 
