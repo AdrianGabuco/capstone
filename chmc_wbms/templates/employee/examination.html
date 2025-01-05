@@ -17,6 +17,7 @@
           <table class="table table-bordered text-center align-middle">
             <thead class="bg-primary text-white">
               <tr>
+                <th>ACTIONS</th>
                 <th>PATIENT ID</th>
                 <th>PATIENT NAME</th>
                 <th>TYPE OF SERVICE</th>
@@ -28,6 +29,14 @@
             <tbody>
               {% for exam in examinations %}
               <tr>
+                <!--Actions-->
+                <td>
+                {% if examination.document %}
+                <a href="{{ examination.document.url }}" target="_blank">View Document</a>
+                {% else %}
+                No Document
+                {% endif %}
+                </td>
                 <!-- Patient Details -->
                 <td>{{ exam.patient.id }}</td>
                 <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>

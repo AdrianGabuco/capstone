@@ -75,6 +75,11 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.email} ({self.get_full_name()})"
     
+    def get_full_name_with_middle_initial(self):
+        middle_name = f"{self.middle_initial[0].upper()}." if self.middle_initial else ""
+        full_name = f"{self.first_name} {middle_name} {self.last_name}".strip()
+        return full_name
+    
 
     
 class Appointment(models.Model):
@@ -101,9 +106,17 @@ class Examination(models.Model):
     service_types = models.ManyToManyField(ServiceType)
     attending_doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
+    document = models.FileField(upload_to='examination_documents/', null=True, blank=True)
     
     def __str__(self):
         return f"Examination for {self.patient}"
+    
+    def get_file_number(self):
+        year_suffix = self.date_created.strftime("%y")  # Get the last two digits of the year
+        file_count = Examination.objects.filter(
+            date_created__year=self.date_created.year
+        ).count() + 1  # Count examinations for the current year and increment by 1
+        return f"{year_suffix}-{file_count:02d}"  # Format as '25-01', '25-02', etc.
     
 class Payment(models.Model):
     PAYMENT_METHODS = [
