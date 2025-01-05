@@ -3,80 +3,98 @@
 {% block title %}Add Examination{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Add New Examination</h2>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset>
-            <legend>Patient Information</legend>
-            <div>
-                <label for="id_first_name">{{ form.first_name.label }}</label>
-                {{ form.first_name }}
+{% load static %}
+{% load widget_tweaks %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Add New Examination</h2>
+    <div class="form-container border rounded p-4" style="max-height: 75vh; overflow-y: auto;">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset class="mb-4">
+                <legend class="h5">Patient Information</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.first_name.label }}" class="form-label">First Name:</label>
+                        {{ form.first_name|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.last_name.label }}" class="form-label">Last Name:</label>
+                        {{ form.last_name|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.middle_name.label }}" class="form-label">Middle Name:</label>
+                        {{ form.middle_name|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.age.label }}" class="form-label">Age:</label>
+                        {{ form.age|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.sex.label }}" class="form-label">Sex:</label>
+                        {{ form.sex|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.contact_number.label }}" class="form-label">Contact Number:</label>
+                        {{ form.contact_number|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ form.address.label }}" class="form-label">Address:</label>
+                        {{ form.address|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="capture-image" class="form-label">Capture Patient Image</label>
+                    <video id="webcam" class="w-100 mb-2" autoplay></video>
+                    <button type="button" id="capture-btn" class="btn btn-primary">Capture Image</button>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <input type="hidden" name="image" id="patient-image-hidden">
+                </div>
+            </fieldset>
+            
+            <fieldset class="mb-4">
+                <legend class="h5">Examination Information</legend>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.service_types.label }}" class="form-label">Service Type:</label>
+                        {{ form.service_types|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.attending_doctor.label }}" class="form-label">Attending Doctor:</label>
+                        {{ form.attending_doctor|add_class:"form-select" }}
+                    </div>
+                </div>
+            </fieldset>
+            
+            <fieldset class="mb-4">
+                <legend class="h5">Payment Information</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.method.label }}" class="form-label">Payment Method:</label>
+                        {{ form.method|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.amount.label }}" class="form-label">Amount:</label>
+                        {{ form.amount|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.status.label }}" class="form-label">Payment Status:</label>
+                        {{ form.status|add_class:"form-select" }}
+                    </div>
+                </div>
+            </fieldset>
+            
+            <div class="text-center">
+                <button type="submit" class="btn btn-success px-4">Save</button>
             </div>
-            <div>
-                <label for="id_last_name">{{ form.last_name.label }}</label>
-                {{ form.last_name }}
-            </div>
-            <div>
-                <label for="id_middle_name">{{ form.middle_name.label }}</label>
-                {{ form.middle_name }}
-            </div>
-            <div>
-                <label for="id_age">{{ form.age.label }}</label>
-                {{ form.age }}
-            </div>
-            <div>
-                <label for="id_sex">{{ form.sex.label }}</label>
-                {{ form.sex }}
-            </div>
-            <div>
-                <label for="id_address">{{ form.address.label }}</label>
-                {{ form.address }}
-            </div>
-            <div>
-                <label for="id_contact_number">{{ form.contact_number.label }}</label>
-                {{ form.contact_number }}
-            </div>
-    
-            <!-- Webcam capture input -->
-            <div>
-                <label for="capture-image">Capture Patient Image</label>
-                <video id="webcam" width="100%" height="auto" autoplay></video>
-                <button type="button" id="capture-btn">Capture Image</button>
-                <canvas id="canvas" style="display:none;"></canvas>
-                <input type="hidden" name="image" id="patient-image-hidden">
-            </div>
-        </fieldset>
-    
-        <fieldset>
-            <legend>Examination Information</legend>
-            <div>
-                <label for="id_service_types">{{ form.service_types.label }}</label>
-                {{ form.service_types }}
-            </div>
-            <div>
-                <label for="id_attending_doctor">{{ form.attending_doctor.label }}</label>
-                {{ form.attending_doctor }}
-            </div>
-        </fieldset>
-    
-        <fieldset>
-            <legend>Payment Information</legend>
-            <div>
-                <label for="id_method">{{ form.method.label }}</label>
-                {{ form.method }}
-            </div>
-            <div>
-                <label for="id_amount">{{ form.amount.label }}</label>
-                {{ form.amount }}
-            </div>
-            <label for="id_status">{{ form.status.label }}</label>
-                {{ form.status }}
-            </div>
-        </fieldset>
-    
-        <button type="submit">Save</button>
-    </form>
+        </form>
+    </div>
+</div>
+
+
     
     <script>
         // Access the webcam and start streaming
