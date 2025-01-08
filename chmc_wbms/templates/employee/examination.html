@@ -5,9 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Examination</h2>
-  <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">
-    Add New Examination
-  </a>
+  <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">Add New Examination</a>
 </div>
 
 <div class="container my-5">
@@ -29,12 +27,16 @@
         <tr>
           <!-- Actions -->
           <td>
-            {% if exam.document %}
-              <a href="{{ exam.document.url }}" target="_blank">View Document</a>
+            {% if exam.has_edited_document %}
+              <a href="{% url 'view_document' exam.pk %}" class="btn btn-primary">View Document</a>
+            {% elif exam.document %}
+              <a href="{{ exam.document.url }}" target="_blank" class="btn btn-primary">Download Document</a>
             {% else %}
               No Document
             {% endif %}
+            <button type="button" class="btn btn-secondary" onclick="openModal({{ exam.pk }})">Upload Edited Document</button>
           </td>
+
           <!-- Patient Details -->
           <td>{{ exam.patient.id }}</td>
           <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>
@@ -61,6 +63,25 @@
             {% endwith %}
           </td>
         </tr>
+
+        <!-- Simplified Modal -->
+<div class="modal fade" id="uploadModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadModalLabel">Upload Edited Document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" enctype="multipart/form-data" action="{% url 'upload_edited_document' exam.pk %}">
+          {% csrf_token %}
+          <input type="file" name="edited_document" class="form-control" required>
+          <button type="submit" class="btn btn-primary mt-3">Upload Document</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
         {% empty %}
         <tr>
           <td colspan="7" style="text-align: center;">No examination records found.</td>
@@ -70,4 +91,13 @@
     </table>
   </div>
 </div>
+
+<script>
+  // Open the modal
+  function openModal(examId) {
+    var modal = new bootstrap.Modal(document.getElementById('uploadModal-' + examId));
+    modal.show();
+  }
+
+</script>
 {% endblock %}

@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import employee_examination_view, employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, get_patient, add_examination
+from webapp.views import verify_document, employee_examination_view,download_document, upload_edited_document, view_document, employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, get_patient, add_examination, edit_document
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -41,7 +41,11 @@ urlpatterns = [
     path('employee_examination/', employee_examination_view, name='employee_examination'),
     path('add_examination/', add_examination, name='add_examination'),
     path('api/get-patient/<int:patient_id>/', get_patient, name='get_patient'),
-
+    path('examination/<int:examination_id>/edit_document/', edit_document, name='edit_document'),
+    path('examination/<int:pk>/download/', download_document, name='download_document'),
+    path('examination/<int:pk>/upload/', upload_edited_document, name='upload_edited_document'),
+    path('examination/<int:pk>/view/', view_document, name='view_document'),
+    path('verify-document/', verify_document, name='verify_document'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

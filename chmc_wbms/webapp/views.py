@@ -1,5 +1,9 @@
 import base64, re
 import os
+import mammoth
+import hashlib
+import pythoncom
+from win32com.client import Dispatch
 from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
@@ -10,18 +14,20 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Prefetch
 from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
 from datetime import datetime
-from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm
 from django.views.decorators.csrf import csrf_protect
 from docx import Document
 from docx.shared import Inches
 from django.conf import  settings
+from django.core.exceptions import ObjectDoesNotExist
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -319,7 +325,11 @@ def add_appointment(request):
 def employee_examination_view(request):
     # Fetch examinations along with related patient and payment details
     account = request.user
-    examinations = Examination.objects.select_related('patient').prefetch_related('service_types', 'payment_set')
+    examinations = (
+        Examination.objects.select_related('patient', 'attending_doctor')
+        .prefetch_related('service_types', Prefetch('payment_set'))
+        .order_by('-date_created')  # Order by latest examination first
+    )
 
     context = {
         'account' : account,
@@ -450,46 +460,65 @@ def generate_examination_document(examination):
     template_path = 'templates/examination_template.docx'
     output_path = os.path.join(settings.MEDIA_ROOT, 'examination_documents')  # Store the relative path
 
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
     # Load the document template
     doc = Document(template_path)
 
     # Populate the template with examination details
     patient = examination.patient
     doctor = examination.attending_doctor
-
     patient_full_name = patient.get_full_name_with_middle_initial()
     doctor_full_name = doctor.get_full_name_with_middle_initial()
     file_number = examination.get_file_number()
 
-    # Fill the template with text
-    for paragraph in doc.paragraphs:
-        paragraph.text = paragraph.text.replace('{PATIENT_NAME}', patient_full_name)
-        paragraph.text = paragraph.text.replace('{AGE}', str(patient.age))
-        paragraph.text = paragraph.text.replace('{SEX}', patient.sex)
-        paragraph.text = paragraph.text.replace('{SERVICE_TYPE}', ', '.join([str(s) for s in examination.service_types.all()]))
-        paragraph.text = paragraph.text.replace('{DATE}', examination.date_created.strftime('%B %d, %Y'))
-        paragraph.text = paragraph.text.replace('{DOCTOR_NAME}', doctor_full_name)
-        paragraph.text = paragraph.text.replace('{FILE_NO}', file_number)
+    # Generate the unique code
+    salt = "CHMC2024"
+    pepper = "WBMS2025"
+    raw_code = f"{file_number}-{patient_full_name}-{doctor_full_name}"
+    sha_input = f"{salt}{raw_code}{pepper}".encode('utf-8')
+    unique_code = hashlib.sha256(sha_input).hexdigest()[:8].upper()
+    unique_code = f"CHMC-{unique_code}"
 
-    # Replace the {SIGNATURE} placeholder with the image
-    for paragraph in doc.paragraphs:
+    # Fill the template with text
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                cell.text = cell.text.replace('{PATIENT_NAME}', patient_full_name)
+                cell.text = cell.text.replace('{AGE}', str(patient.age))
+                cell.text = cell.text.replace('{SEX}', patient.sex)
+                cell.text = cell.text.replace('{SERVICE_TYPE}', ', '.join([str(s) for s in examination.service_types.all()]))
+                cell.text = cell.text.replace('{DATE}', examination.date_created.strftime('%B %d, %Y'))
+                cell.text = cell.text.replace('{FILE_NO}', file_number)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                # Add patient image if placeholder is found
+                    if '{PATIENT_IMAGE}' in cell.text:
+                        cell.text = cell.text.replace('{PATIENT_IMAGE}', '')  # Clear the placeholder text
+                        if patient.image:
+                            run = cell.paragraphs[0].add_run()
+                            run.add_picture(patient.image.path, width=Inches(1), height=Inches(1))
+
+    footer = doc.sections[0].footer  # Get the footer from the first section
+
+    # Iterate over paragraphs in the footer
+    for paragraph in footer.paragraphs:
+        # Replace placeholders in the footer
+        if '{DOCTOR_NAME}' in paragraph.text:
+            paragraph.text = paragraph.text.replace('{DOCTOR_NAME}', doctor_full_name)
+
         if '{SIGNATURE}' in paragraph.text:
-            paragraph.text = paragraph.text.replace('{SIGNATURE}', '')  # Clear placeholder text
+            paragraph.text = paragraph.text.replace('{SIGNATURE}', '')  # Clear the placeholder
             if doctor.signature_image:
                 run = paragraph.add_run()
-                run.add_picture(doctor.signature_image.path, width=Inches(1.5))
-            break
+                run.add_picture(doctor.signature_image.path, width=Inches(1), height=Inches(1))  # Add signature image
 
-    # Access the footer and replace placeholders there
-    for section in doc.sections:
-        footer = section.footer
-        for paragraph in footer.paragraphs:
-            paragraph.text = paragraph.text.replace('{DOCTOR_NAME}', doctor_full_name)
-            if '{SIGNATURE}' in paragraph.text:
-                paragraph.text = paragraph.text.replace('{SIGNATURE}', '')  # Clear placeholder text
-                if doctor.signature_image:
-                    run = paragraph.add_run()
-                    run.add_picture(doctor.signature_image.path, width=Inches(1.5))
+        if '{UNIQUE_CODE}' in paragraph.text:
+            paragraph.text = paragraph.text.replace('{UNIQUE_CODE}', unique_code)
 
     # Save the document
     output_filename = f"{file_number}.docx"
@@ -499,3 +528,151 @@ def generate_examination_document(examination):
     # Attach the document to the Examination instance with the relative path
     examination.document.name = os.path.relpath(output_full_path, settings.MEDIA_ROOT).replace(os.sep, '/')
     examination.save()
+
+def docx_to_html(docx_file_path):
+    with open(docx_file_path, "rb") as docx_file:
+        result = mammoth.convert(docx_file)
+        html_content = result.value  # This is the converted HTML content
+    return html_content
+
+@user_passes_test(lambda u: u.is_employee)
+def edit_document(request, examination_id):
+    account = request.user
+    examination = Examination.objects.get(id=examination_id)
+    
+    # Get the document's URL. Make sure it is an absolute path (i.e., it starts with http:// or https://)
+    document_url = examination.document.url
+
+    # Check if the URL starts with a valid protocol (e.g., 'http://', 'https://')
+    if not document_url.startswith('http'):
+        document_url = request.build_absolute_uri(examination.document.url)
+
+    return render(request, 'employee/edit_document.html', {
+        'account': account,
+        'document_url': document_url
+    })
+
+def download_document(request, pk):
+    examination = get_object_or_404(Examination, pk=pk)
+    if examination.document:
+        return FileResponse(examination.document.open(), as_attachment=True, filename=examination.document.name)
+    return redirect('employee_examination')  # Redirect to the examination list if no document.
+
+def upload_edited_document(request, pk):
+    examination = get_object_or_404(Examination, pk=pk)
+
+    if request.method == 'POST':
+        form = UploadEditedDocumentForm(request.POST, request.FILES, instance=examination)
+        if form.is_valid():
+            form.save()
+            return redirect('employee_examination')
+        else:
+            return JsonResponse({'message': 'Failed to upload document.'}, status=400)
+
+    return JsonResponse({'message': 'Invalid request method.'}, status=400)
+
+def docx_to_pdf_exact(docx_path):
+
+    try:
+        # Initialize COM library
+        pythoncom.CoInitialize()
+
+        # Start MS Word
+        word = Dispatch('Word.Application')
+        word.Visible = False
+
+        doc = word.Documents.Open(docx_path)
+        pdf_path = docx_path.replace('.docx', '.pdf')
+        doc.SaveAs(pdf_path, FileFormat=17)  # 17 corresponds to the PDF format
+        doc.Close()
+        word.Quit()
+
+        # Return the path to the PDF
+        return pdf_path
+    except Exception as e:
+        raise RuntimeError(f"Error during conversion: {e}")
+    finally:
+        # Ensure COM library is uninitialized
+        pythoncom.CoUninitialize()
+
+def view_document(request, pk):
+
+    examination = get_object_or_404(Examination, pk=pk)
+
+    # Ensure an edited document exists
+    if not examination.edited_document:
+        return redirect('employee_examination')
+
+    # Convert .docx to PDF
+    try:
+        pdf_path = docx_to_pdf_exact(examination.edited_document.path)
+
+        # Return the PDF file
+        return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+    except Exception as e:
+        # Handle errors gracefully
+        return HttpResponse(f"Error during document view: {e}", status=500)
+    
+def docx_to_pdf_auth_checker(docx_path):
+    """
+    Converts a .docx file to PDF using MS Word (COM automation).
+    """
+    try:
+        pythoncom.CoInitialize()  # Initialize COM library
+        word = Dispatch('Word.Application')
+        word.Visible = False  # Keep Word invisible
+        doc = word.Documents.Open(docx_path)
+        pdf_path = docx_path.replace('.docx', '.pdf')
+        doc.SaveAs(pdf_path, FileFormat=17)  # 17 corresponds to PDF format
+        doc.Close()
+        word.Quit()
+        return pdf_path
+    except Exception as e:
+        raise RuntimeError(f"Error during conversion: {e}")
+    finally:
+        pythoncom.CoUninitialize()  # Cleanup COM library
+
+def verify_document(request):
+    """
+    Verify a document by checking the unique code and displaying the PDF if valid.
+    """
+    if request.method == 'POST':
+        unique_code = request.POST.get('unique_code')
+
+        try:
+            # Split the code to get necessary parts
+            unique_code_parts = unique_code.split('-')
+            if len(unique_code_parts) != 2:
+                return HttpResponse("Invalid code format.")
+
+            code_prefix, code_value = unique_code_parts
+            if code_prefix != "CHMC":
+                return HttpResponse("Invalid prefix in the code.")
+
+            # Iterate through all examinations to find the one that matches the unique code
+            examination = None
+            for ex in Examination.objects.all():
+                if ex.get_unique_code() == unique_code:
+                    examination = ex
+                    break
+
+            if not examination:
+                return HttpResponse("Document not found for the provided code.")
+
+            # Check if an edited document exists
+            if not examination.has_edited_document():
+                return HttpResponse("This document does not have an edited version.")
+
+            # Convert the .docx document to PDF if not already converted
+            try:
+                pdf_path = docx_to_pdf_auth_checker(examination.edited_document.path)
+
+                # Serve the PDF file for the user to view
+                return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+            except Exception as e:
+                return HttpResponse(f"Error during document conversion: {e}")
+        
+        except Exception as e:
+            return HttpResponse(f"Error: {e}")
+    else:
+        return render(request, 'authenticity_checker.html')

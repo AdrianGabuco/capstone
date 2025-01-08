@@ -1,0 +1,12 @@
+
+<div class="container mt-5">
+    <h2>Document Verification</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="unique_code">Enter Verification Code:</label>
+            <input type="text" class="form-control" id="unique_code" name="unique_code" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Verify Document</button>
+    </form>
+</div>

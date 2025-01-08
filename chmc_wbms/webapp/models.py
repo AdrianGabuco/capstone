@@ -1,7 +1,9 @@
+import hashlib
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
+from tinymce.models import HTMLField
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -112,7 +114,32 @@ class Examination(models.Model):
     attending_doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     document = models.FileField(upload_to='examination_documents/', null=True, blank=True)
-    
+    edited_document = models.FileField(upload_to='examination_documents/edited', null=True, blank=True)  # Edited document
+    original_document_hash = models.CharField(max_length=64, null=True, blank=True)
+
+    def calculate_document_hash(self, file_path):
+        """Calculate SHA-256 hash of a file."""
+        hasher = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    def save_original_document_hash(self):
+        """Save the hash of the original document."""
+        if self.edited_document:
+            self.original_document_hash = self.calculate_document_hash(self.edited_document.path)
+            self.save()
+
+    def verify_document_integrity(self):
+        """Verify if the document has changed by comparing hashes."""
+        if not self.edited_document or not self.original_document_hash:
+            return False  # Document integrity cannot be verified
+        current_hash = self.calculate_document_hash(self.edited_document.path)
+        return current_hash == self.original_document_hash
+
+    def has_edited_document(self):
+        return bool(self.edited_document)
     def __str__(self):
         return f"Examination for {self.patient}"
     
@@ -122,6 +149,28 @@ class Examination(models.Model):
             date_created__year=self.date_created.year
         ).count() + 1  # Count examinations for the current year and increment by 1
         return f"{year_suffix}-{file_count:02d}"  # Format as '25-01', '25-02', etc.
+    
+    def get_unique_code(self):
+        salt = "CHMC2024"
+        pepper = "WBMS2025"
+        file_number = self.get_file_number()
+        patient_full_name = self.patient.get_full_name_with_middle_initial()
+        doctor_full_name = self.attending_doctor.get_full_name_with_middle_initial()
+        raw_code = f"{file_number}-{patient_full_name}-{doctor_full_name}"
+        sha_input = f"{salt}{raw_code}{pepper}".encode('utf-8')
+        unique_code = hashlib.sha256(sha_input).hexdigest()[:8].upper()
+        return f"CHMC-{unique_code}"
+
+    # Optional: Full SHA-256 unique code (if needed)
+    def get_raw_unique_code(self):
+        salt = "CHMC2024"
+        pepper = "WBMS2025"
+        file_number = self.get_file_number()
+        patient_full_name = self.patient.get_full_name_with_middle_initial()
+        doctor_full_name = self.attending_doctor.get_full_name_with_middle_initial()
+        raw_code = f"{file_number}-{patient_full_name}-{doctor_full_name}"
+        sha_input = f"{salt}{raw_code}{pepper}".encode('utf-8')
+        return hashlib.sha256(sha_input).hexdigest()
     
 class Payment(models.Model):
     PAYMENT_METHODS = [

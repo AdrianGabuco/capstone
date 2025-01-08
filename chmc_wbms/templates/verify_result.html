@@ -1,0 +1,18 @@
+
+<div class="container mt-5">
+    <h2>Verification Result</h2>
+    <p><strong>Patient:</strong> {{ examination.patient }}</p>
+    <p><strong>Attending Doctor:</strong> {{ examination.attending_doctor }}</p>
+    <p><strong>Verification Code:</strong> {{ examination.get_unique_code }}</p>
+    <p>
+        <strong>Document Integrity:</strong>
+        {% if is_intact %}
+            <span class="text-success">Document is unchanged</span>
+        {% else %}
+            <span class="text-danger">Document has been modified</span>
+        {% endif %}
+    </p>
+
+    <h3>Document View</h3>
+    <iframe src="https://docs.google.com/gview?url={{ examination.edited_document.url }}&embedded=true" width="100%" height="600px"></iframe>
+</div>

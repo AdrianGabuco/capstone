@@ -1,0 +1,27 @@
+{% extends 'employee/employee_base.html' %}
+{% load static %}
+{% block content %}
+<h1>Edit Document</h1>
+
+    <!-- Display error message if any -->
+    {% if error %}
+        <div class="error-message">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
+    <div class="document-viewer">
+        <h2>Document Preview</h2>
+        <!-- Embed the document using Google Docs Viewer -->
+        <iframe src="https://docs.google.com/viewer?url={{ document_url }}&embedded=true"
+                width="100%" 
+                height="800px" 
+                style="border: none;">
+        </iframe>
+    </div>
+
+    <div class="buttons">
+        <!-- Save and Print buttons, you can adjust the URLs and functionality -->
+        <a href="{% url 'employee_examination' %}" class="btn btn-danger">Back to Examination</a>
+    </div>
+{% endblock %}

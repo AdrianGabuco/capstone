@@ -3,6 +3,7 @@ from .models import CustomUser, Appointment, ServiceType, Patient, Examination, 
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from tinymce.widgets import TinyMCE
 
 class UserCreationForm(forms.ModelForm):
     class Meta:
@@ -378,3 +379,8 @@ class ExaminationForm(forms.Form):
     )
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
     status = forms.ChoiceField(choices=[('Paid', 'Paid'), ('Pending', 'Pending')], label="Payment Status")
+
+class UploadEditedDocumentForm(forms.ModelForm):
+    class Meta:
+        model = Examination
+        fields = ['edited_document']
