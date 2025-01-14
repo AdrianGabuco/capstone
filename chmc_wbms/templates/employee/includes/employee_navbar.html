@@ -17,7 +17,7 @@
             <img src="{% static 'image/profile_ICON.png' %}" alt="Default Profile Icon" class="profileiconone">
             {% endif %}
 
-<!-- User Full Name with Prefix -->
+            <!-- User Full Name with Prefix -->
             <h4 class="admin ui heading size-headinglg-name">
                 {% if user.prefix %}
                     {{ user.prefix }} {{ user.first_name }} {{ user.last_name }}

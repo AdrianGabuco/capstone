@@ -148,7 +148,7 @@
     border-bottom-left-radius: 40px;
     border-bottom-right-radius: 40px;
     background-color: var(--white_a700);
-    height: 80px;
+    height: 90px;
     @media only screen and (max-width: 1050px) {
         margin-left: 0px;
         margin-right: 0px;        
@@ -184,10 +184,9 @@
 
 .rowheaderlogo {
     align-self: center;
-    width: 24%;
+    width: 20%;
     display: flex;
     justify-content: center;
-    align-items: center;
     @media only screen and (max-width: 1050px) {
         width: 100%;
     }
@@ -259,7 +258,6 @@
 
 .rowprofileicono {
     margin-top: 4px;
-    width: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -273,9 +271,9 @@
 }
 
 .profileiconone {
-    height: 56px;
-    width: 56px;
-    object-fit: cover;
+    max-width: 100px; /* Adjust the size of the image */
+    height: auto; /* Maintain the aspect ratio */
+    margin-bottom: 10px; /* Add spacing between the image and the heading */
 }
 
 .columnusername {
@@ -702,3 +700,7 @@
     }
 }
 
+.custom-input {
+    background-color: white; /* Set background to white */
+    border-color: #ccc; /* Adjust border color to match the stroke/border color */
+}
