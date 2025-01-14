@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import verify_document, employee_examination_view,download_document, upload_edited_document, view_document, employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, get_patient, add_examination, edit_document
+from webapp.views import search_patient, verify_document, employee_examination_view,download_document, upload_edited_document, view_document, employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, get_patient, add_examination, edit_document
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -46,6 +46,7 @@ urlpatterns = [
     path('examination/<int:pk>/upload/', upload_edited_document, name='upload_edited_document'),
     path('examination/<int:pk>/view/', view_document, name='view_document'),
     path('verify-document/', verify_document, name='verify_document'),
+    path('search_patient/', search_patient, name='search_patient'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

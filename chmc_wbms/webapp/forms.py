@@ -3,7 +3,7 @@ from .models import CustomUser, Appointment, ServiceType, Patient, Examination, 
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from tinymce.widgets import TinyMCE
+
 
 class UserCreationForm(forms.ModelForm):
     class Meta:
@@ -351,13 +351,41 @@ class AppointmentForm(forms.ModelForm):
 
 class ExaminationForm(forms.Form):
     # Patient fields
-    first_name = forms.CharField(max_length=100, label="First Name")
-    last_name = forms.CharField(max_length=100, label="Last Name")
-    middle_name = forms.CharField(max_length=100, required=False, label="Middle Name")
-    age = forms.IntegerField(label="Age")
-    sex = forms.ChoiceField(choices=[('Male', 'Male'), ('Female', 'Female')], label="Sex")
-    address = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), label="Address")
-    contact_number = forms.CharField(max_length=15, label="Contact Number")
+    first_name = forms.CharField(
+        max_length=100, 
+        label="First Name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'first-name'})
+    )
+    last_name = forms.CharField(
+        max_length=100, 
+        label="Last Name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'last-name'})
+    )
+    middle_name = forms.CharField(
+        max_length=100, 
+        required=False,
+        label="Middle Name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'middle-name'})
+    )
+    age = forms.IntegerField(
+        label="Age",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'age'})
+    )
+    sex = forms.ChoiceField(
+        choices=[('Male', 'Male'), ('Female', 'Female')], 
+        label="Sex",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'sex'})
+    )
+    address = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 2, 'class': 'form-control', 'id': 'address'}), 
+        label="Address",
+
+    )
+    contact_number = forms.CharField(
+        max_length=15, 
+        label="Contact Number",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'contact-number'})
+    )
     image = forms.CharField(required=False, label="Capture Patient Image")  # Field remains the same in the backend
 
     # Examination fields

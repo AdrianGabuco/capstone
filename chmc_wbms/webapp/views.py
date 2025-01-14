@@ -3,6 +3,7 @@ import os
 import mammoth
 import hashlib
 import pythoncom
+import json
 from win32com.client import Dispatch
 from io import BytesIO
 from PIL import Image
@@ -22,7 +23,7 @@ from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpRe
 from django.urls import reverse
 from datetime import datetime
 from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from docx import Document
 from docx.shared import Inches
 from django.conf import  settings
@@ -356,79 +357,89 @@ def get_patient(request, patient_id):
         return JsonResponse({'success': False, 'error': 'Patient not found.'})
 
 
-@user_passes_test(lambda u: u.is_employee)
 def add_examination(request):
     account = request.user
+
     if request.method == 'POST':
+        # Handle patient search (AJAX request)
+        if 'search_patient' in request.POST:
+            search_query = request.POST.get('search_patient', '').strip()
+            # Filter patients by name or ID
+            patients = Patient.objects.filter(
+                Q(first_name__istartswith=search_query) |
+                Q(last_name__istartswith=search_query) |
+                Q(middle_name__istartswith=search_query) |
+                Q(id__icontains=search_query)
+            )
+            # Prepare patient data for JSON response
+            patient_list = [
+                {
+                    'id': patient.id,
+                    'first_name': patient.first_name,
+                    'last_name': patient.last_name,
+                    'middle_name': patient.middle_name or '',
+                    'age': patient.age,
+                    'sex': patient.sex,
+                    'address': patient.address,
+                    'contact_number': patient.contact_number,
+                    'image_url': patient.image.url if patient.image else None,
+                }
+                for patient in patients
+            ]
+            return JsonResponse({'patients': patient_list})
+
+        # Handle form submission for adding an examination
         form = ExaminationForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                # Extract patient data
-                first_name = form.cleaned_data['first_name']
-                last_name = form.cleaned_data['last_name']
-                middle_name = form.cleaned_data['middle_name']
-                age = form.cleaned_data['age']
-                sex = form.cleaned_data['sex']
-                address = form.cleaned_data['address']
-                contact_number = form.cleaned_data['contact_number']
+                # Check if a patient is selected from the search results
+                patient_id = request.POST.get('patient_id')
+                if patient_id:
+                    patient = get_object_or_404(Patient, id=patient_id)
+                    
+                    # If the patient has an existing image, remove it before adding a new one
+                    if patient.image:
+                        patient.image.delete()
+                    
+                    # Handle the new image from the webcam
+                    image_data = request.POST.get('image')  # Captured image data from the form
+                    if image_data:
+                        # Convert base64 image data to a Django ImageFile
+                        format, imgstr = image_data.split(';base64,')  # Get base64 string
+                        ext = format.split('/')[1]  # Extract file extension (png, jpeg, etc.)
+                        image_data = ContentFile(base64.b64decode(imgstr), name=f"patient_{patient.id}_image.{ext}")
+                        
+                        # Save the new image to the patient instance
+                        patient.image = image_data
+                        patient.save()
+                else:
+                    # Create a new patient if not selected
+                    first_name = form.cleaned_data['first_name']
+                    last_name = form.cleaned_data['last_name']
+                    middle_name = form.cleaned_data['middle_name']
+                    age = form.cleaned_data['age']
+                    sex = form.cleaned_data['sex']
+                    address = form.cleaned_data['address']
+                    contact_number = form.cleaned_data['contact_number']
 
-                # Handle base64 image data from hidden input
-                base64_image = request.POST.get('image')
-                patient_image = None
+                    patient = Patient.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        middle_name=middle_name,
+                        age=age,
+                        sex=sex,
+                        address=address,
+                        contact_number=contact_number,
+                    )
 
-                if base64_image and base64_image.startswith('data:image/'):
-                    try:
-                        # Extract image data and decode base64
-                        format, imgstr = base64_image.split(';base64,')
-                        img_bytes = base64.b64decode(imgstr)
-
-                        # Validate MIME type (e.g., 'image/png', 'image/jpeg')
-                        if format not in ['data:image/png', 'data:image/jpeg']:
-                            raise ValueError("Unsupported image format")
-
-                        # Use PIL to save the image in PNG format
-                        image = Image.open(BytesIO(img_bytes))
-                        image_io = BytesIO()
-
-                        # Construct a sanitized filename
-                        filename = f"{last_name}_{first_name}"  # Use underscore for clarity
-                        filename = re.sub(r'[^\w\s,-]', '', filename).replace(' ', '_')
-
-                        # Ensure .png extension
-                        if not filename.endswith('.png'):
-                            filename += '.png'
-
-                        # Save image to BytesIO and create ContentFile
-                        image.save(image_io, format='PNG')
-                        patient_image = ContentFile(image_io.getvalue(), name=filename)
-                    except Exception as e:
-                        print(f"Image processing error: {e}")
-                        return render(request, 'employee/add_examination.html', {
-                            'form': form,
-                            'account': account,
-                            'error': "Error processing the patient image. Please try again."
-                        })
-
-                # Save Patient instance
-                patient = Patient.objects.create(
-                    first_name=first_name,
-                    last_name=last_name,
-                    middle_name=middle_name,
-                    age=age,
-                    sex=sex,
-                    address=address,
-                    contact_number=contact_number,
-                    image=patient_image
-                )
-
-                # Save Examination instance
+                # Create the examination
                 examination = Examination.objects.create(
                     patient=patient,
                     attending_doctor=form.cleaned_data['attending_doctor']
                 )
                 examination.service_types.set(form.cleaned_data['service_types'])
 
-                # Save Payment instance
+                # Create payment record
                 Payment.objects.create(
                     examination=examination,
                     method=form.cleaned_data['method'],
@@ -439,22 +450,20 @@ def add_examination(request):
                 # Generate the document
                 generate_examination_document(examination)
 
-                return redirect('employee_examination')  # Replace with your success page
+                return redirect('employee_examination')  # Redirect to success page
             except Exception as e:
-                print(f"Error: {e}")
                 return render(request, 'employee/add_examination.html', {
                     'form': form,
                     'account': account,
-                    'error': "An unexpected error occurred. Please try again."
+                    'error': f"An error occurred: {e}"
                 })
     else:
         form = ExaminationForm()
 
     return render(request, 'employee/add_examination.html', {
         'form': form,
-        'account': account
+        'account': account,
     })
-
 
 def generate_examination_document(examination):
     template_path = 'templates/examination_template.docx'
@@ -472,6 +481,7 @@ def generate_examination_document(examination):
     patient_full_name = patient.get_full_name_with_middle_initial()
     doctor_full_name = doctor.get_full_name_with_middle_initial()
     file_number = examination.get_file_number()
+    patient_full_name_lastname_starting = patient.patient_full_name_last_name_start()
 
     # Generate the unique code
     salt = "CHMC2024"
@@ -521,7 +531,7 @@ def generate_examination_document(examination):
             paragraph.text = paragraph.text.replace('{UNIQUE_CODE}', unique_code)
 
     # Save the document
-    output_filename = f"{file_number}.docx"
+    output_filename = f"{patient_full_name_lastname_starting}.docx"
     output_full_path = os.path.join(output_path, output_filename)
     doc.save(output_full_path)
 
@@ -676,3 +686,59 @@ def verify_document(request):
             return HttpResponse(f"Error: {e}")
     else:
         return render(request, 'authenticity_checker.html')
+    
+@csrf_exempt
+def search_patient(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            query = data.get("query", "").strip()
+            if query:
+                # Split the query into parts (e.g., "John Doe")
+                name_parts = query.split()
+                filters = Q()
+
+                if len(name_parts) == 1:
+                    # Search for matches in first, middle, or last name
+                    filters |= (
+                        Q(first_name__icontains=name_parts[0]) |
+                        Q(middle_name__icontains=name_parts[0]) |
+                        Q(last_name__icontains=name_parts[0])
+                    )
+                elif len(name_parts) > 1:
+                    # Search for first + last name or other combinations
+                    filters |= (
+                        Q(first_name__icontains=name_parts[0]) & 
+                        Q(last_name__icontains=name_parts[1])
+                    )
+                    # Optionally include middle name if three parts are provided
+                    if len(name_parts) > 2:
+                        filters |= (
+                            Q(first_name__icontains=name_parts[0]) &
+                            Q(middle_name__icontains=name_parts[1]) &
+                            Q(last_name__icontains=name_parts[2])
+                        )
+
+                # Filter patients based on the query
+                patients = Patient.objects.filter(filters)[:10]
+                results = [
+                    {
+                        "id": patient.id,
+                        "first_name": patient.first_name or "",
+                        "middle_name": patient.middle_name or "",
+                        "last_name": patient.last_name or "",
+                        "age" : patient.age or "",
+                        "sex" : patient.sex or "",
+                        "contact_number" : patient.contact_number or "",
+                        "address" :patient.address or ""
+                    }
+                    for patient in patients
+                ]
+                return JsonResponse({"patients": results})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"patients": []})

@@ -5,6 +5,22 @@
 {% block content %}
 {% load static %}
 {% load widget_tweaks %}
+<style>
+    #search-results {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        background: #fff;
+        z-index: 1000;
+    }
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+    .dropdown-item:hover {
+        background-color: #f0f0f0;
+    }
+</style>
 <div class="container mt-5">
     <h2 class="mb-4 text-center">Add New Examination</h2>
     <div class="form-container border rounded p-4" style="max-height: 75vh; overflow-y: auto;">
@@ -12,6 +28,21 @@
             {% csrf_token %}
             <fieldset class="mb-4">
                 <legend class="h5">Patient Information</legend>
+                <input type="hidden" name="patient_id" id="patient-id">
+                <div class="position-relative">
+                    <input
+                        type="text"
+                        id="patient-search"
+                        class="form-control"
+                        placeholder="Search for a patient..."
+                        autocomplete="off"
+                    />
+                    <div
+                        id="search-results"
+                        class="dropdown-menu position-absolute w-100"
+                        style="display: none;"
+                    ></div>
+                </div>
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.first_name.label }}" class="form-label">First Name:</label>
@@ -132,5 +163,84 @@
             const tracks = stream.getTracks();
             tracks.forEach(track => track.stop());
         });
+        document.getElementById("patient-search").addEventListener("input", function () {
+    const query = this.value.trim();
+
+    if (query.length === 0) {
+        document.getElementById("search-results").style.display = "none";
+        return;
+    }
+
+    fetch("{% url 'search_patient' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify({ query: query }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            const dropdown = document.getElementById("search-results");
+            dropdown.innerHTML = ""; // Clear previous results
+
+            if (data.patients.length > 0) {
+                data.patients.forEach(patient => {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    item.textContent = `${patient.first_name} ${patient.middle_name || ""} ${patient.last_name}`.trim();
+                    
+                    // Set up click event
+                    item.onclick = () => {
+                        document.getElementById("patient-search").value = item.textContent; // Update input value
+                        dropdown.style.display = "none"; // Hide dropdown
+
+                        // Populate the form with patient details
+                        populatePatientForm(patient);
+                    };
+
+                    dropdown.appendChild(item);
+                });
+                dropdown.style.display = "block"; // Show dropdown if results exist
+            } else {
+                dropdown.style.display = "none"; // Hide dropdown if no results
+            }
+        })
+        .catch(error => console.error("Error fetching patient data:", error));
+});
+
+// Hide dropdown if the user clicks outside
+document.addEventListener("click", function (event) {
+    const searchInput = document.getElementById("patient-search");
+    const dropdown = document.getElementById("search-results");
+
+    if (!searchInput.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.style.display = "none";
+    }
+});
+
+// Function to populate the form with selected patient details
+function populatePatientForm(patient) {
+    // Example: Update form fields with patient data
+    document.getElementById("patient-id").value = patient.id;
+    document.getElementById("first-name").value = patient.first_name;
+    document.getElementById("middle-name").value = patient.middle_name || ""; // Optional
+    document.getElementById("last-name").value = patient.last_name;
+    document.getElementById("age").value = patient.age;
+    document.getElementById("sex").value = patient.sex;
+    document.getElementById("address").value = patient.address;
+    document.getElementById("contact-number").value = patient.contact_number;
+
+    // Update image preview if available
+    const patientImage = document.getElementById("patient-image");
+    if (patient.image_url) {
+        patientImage.src = patient.image_url;
+        patientImage.style.display = "block";
+    } else {
+        patientImage.style.display = "none";
+    }
+}
+
+// Hide results if user clicks outside the search bar or results
     </script>
 {% endblock %}

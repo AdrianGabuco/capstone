@@ -5,6 +5,7 @@ from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
 from tinymce.models import HTMLField
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -52,6 +53,11 @@ class Patient(models.Model):
     def get_full_name_with_middle_initial(self):
         middle_initial = f"{self.middle_name[0].upper()}." if self.middle_name else ""
         full_name = f"{self.first_name} {middle_initial} {self.last_name}".strip()
+        return full_name
+    
+    def patient_full_name_last_name_start(self):
+        middle_initial = f"{self.middle_name[0].upper()}." if self.middle_name else ""
+        full_name = f"{self.last_name}, {self.first_name} {middle_initial}".strip()
         return full_name
 
 class CustomUser(AbstractUser):
