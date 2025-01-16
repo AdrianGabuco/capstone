@@ -26,7 +26,6 @@ body, html {
    /* Make the modal body scrollable */
    .modal-body {
     max-height: 400px; /* Adjust height to fit your requirements */
-    overflow-y: auto; /* Enable vertical scrolling */
 }
 
 /* Add smooth scrolling for better user experience */
@@ -67,7 +66,7 @@ body, html {
     border-radius: 5px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     height: 650px; /* Fixed height */
-      width: 100%; /* Full width */
+    width: 100%; /* Full width */
   }
 
   .table-container {
