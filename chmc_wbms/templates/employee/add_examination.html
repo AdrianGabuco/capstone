@@ -20,22 +20,104 @@
     .dropdown-item:hover {
         background-color: #f0f0f0;
     }
+    .form-select.sex {
+        border: 2px solid #ccc;
+    }
+    .form-control {
+        border: 1px solid #ccc; /* Adds a light gray border */
+        border-radius: 4px; /* Optional: rounded corners */
+        padding-left: 15px;
+    }
+    .form-check.multi {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-check.multi label {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-check.multi input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 25px;
+        height: 20px;
+        margin-right: 10px;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        display: inline-block;
+    }
+
+    .form-check.multi input[type="checkbox"]:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .form-check.multi input[type="checkbox"]:checked::after {
+        content: '✔';
+        color: white;
+        font-weight: bold;
+        display: block;
+        text-align: center;
+    }
+    .form-check.pm1 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-check.pm1 label {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-check.pm1 input[type="radio"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 25px;
+        height: 20px;
+        margin-right: 10px;
+        border: 2px solid #ccc;
+        border-radius: 50%;
+        outline: none;
+        cursor: pointer;
+        display: inline-block;
+    }
+
+    .form-check.pm1 input[type="radio"]:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .form-check.pm1 input[type="radio"]:checked::after {
+        content: '';
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-radius: 50%;
+        display: block;
+        margin: 3px auto;
+    }
 </style>
 <div class="container mt-5">
     <h2 class="mb-4 text-center">Add New Examination</h2>
-    <div class="form-container border rounded p-4" style="max-height: 75vh; overflow-y: auto;">
+    <div class="border rounded p-4" style="max-height: 60vh; overflow-y: auto;">
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <fieldset class="mb-4">
-                <legend class="h5">Patient Information</legend>
+                <legend class="h5 mb-2">Patient Information</legend>
                 <input type="hidden" name="patient_id" id="patient-id">
-                <div class="position-relative">
+                <div class="position-relative mb-2">
                     <input
                         type="text"
                         id="patient-search"
-                        class="form-control"
+                        class="form-control mb-2"
                         placeholder="Search for a patient..."
                         autocomplete="off"
+                        style="margin-bottom: 0.5rem; border: 1px solid #ccc; border-radius: 4px; padding-left: 15px"
                     />
                     <div
                         id="search-results"
@@ -43,6 +125,7 @@
                         style="display: none;"
                     ></div>
                 </div>
+
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.first_name.label }}" class="form-label">First Name:</label>
@@ -64,7 +147,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.sex.label }}" class="form-label">Sex:</label>
-                        {{ form.sex|add_class:"form-select" }}
+                        {{ form.sex|add_class:"form-select sex" }}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.contact_number.label }}" class="form-label">Contact Number:</label>
@@ -87,11 +170,11 @@
             </fieldset>
             
             <fieldset class="mb-4">
-                <legend class="h5">Examination Information</legend>
+                <legend class="h5 mb-3">Examination Information</legend>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="{{ form.service_types.label }}" class="form-label">Service Type:</label>
-                        {{ form.service_types|add_class:"form-check align-left" }}
+                        {{ form.service_types|add_class:"form-check multi" }}
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="{{ form.attending_doctor.label }}" class="form-label">Attending Doctor:</label>
@@ -101,11 +184,11 @@
             </fieldset>
             
             <fieldset class="mb-4">
-                <legend class="h5">Payment Information</legend>
+                <legend class="h5 mb-3">Payment Information</legend>
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.method.label }}" class="form-label">Payment Method:</label>
-                        {{ form.method|add_class:"form-check" }}
+                        {{ form.method|add_class:"form-check pm1" }}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.amount.id_for_label }}" class="form-label">Amount:</label>
