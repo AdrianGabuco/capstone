@@ -26,7 +26,6 @@ body, html {
    /* Make the modal body scrollable */
    .modal-body {
     max-height: 400px; /* Adjust height to fit your requirements */
-    overflow-y: auto; /* Enable vertical scrolling */
 }
 
 /* Add smooth scrolling for better user experience */
@@ -66,8 +65,8 @@ body, html {
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    height: 500px; /* Fixed height */
-      width: 100%; /* Full width */
+    height: 650px; /* Fixed height */
+    width: 100%; /* Full width */
   }
 
   .table-container {
@@ -127,4 +126,34 @@ body, html {
 
 .scrollable-container .row {
     margin: 0;
+}
+.custom-img {
+  padding: 2px;
+  width: 150px; /* Fixed width */
+  height: 150px; /* Fixed height */
+  object-fit: cover; /* Ensures the image is scaled and cropped to fit without distortion */
+  border-radius: 50%; /* Makes the image circular */
+  margin: auto; /* Centers the image */
+  background-color: #f0f0f0; /* Adds a light background for smaller images without transparency */
+  display: block;
+}
+
+.card {
+  padding: 10px; /* Reduce card padding */
+}
+
+.card-title {
+  font-size: 0.9rem; /* Adjust font size for compact layout */
+}
+
+.row > .col-md-2 {
+  padding: 5px; /* Less padding between columns */
+}
+.card-img-top1 {
+  display: block;       /* Ensures the image behaves like a block-level element */
+    margin: 0 auto 10px;       /* Centers the image horizontally */
+    width: 350px;         /* Sets the fixed width */
+    height: auto;         /* Maintains the aspect ratio of the image */
+    max-width: 100%;      /* Ensures responsiveness on smaller screens */
+    object-fit: cover;
 }

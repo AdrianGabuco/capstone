@@ -1,28 +1,22 @@
-<div class="container mt-5"></div>
-<ul class="nav">
-    <li class="nav-item">
-      <a  href="{% url 'employee_dashboard' %}" class="nav-link">
-          Home</a>
+<div class="container mt-5">
+  <ul class="tab-bar">
+    <li class="tab-item-1 {% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}">
+      <a href="{% url 'employee_dashboard' %}" class="tab-link">Home</a>
     </li>
-    <li class="nav-item" role="presentation">
-      <a  href="{% url 'employee_examination' %}" class="nav-link">
-          Examination</a>
+    <li class="tab-item-2 {% if request.resolver_match.url_name == 'employee_examination' %}active{% endif %}">
+      <a href="{% url 'employee_examination' %}" class="tab-link">Examination</a>
     </li>
-    <li class="nav-item" role="presentation">
-      <a  href="{% url 'employee_patients_list' %}" class="nav-link">
-          Patients List</a>
+    <li class="tab-item-3 {% if request.resolver_match.url_name == 'employee_patients_list' %}active{% endif %}">
+      <a href="{% url 'employee_patients_list' %}" class="tab-link">Patients List</a>
     </li>
-    <li class="nav-item" role="presentation">
-      <a href="{% url 'document_results' %}" class="nav-link">
-          Document Results</a>
+    <li class="tab-item-4 {% if request.resolver_match.url_name == 'document_results' %}active{% endif %}">
+      <a href="{% url 'document_results' %}" class="tab-link">Document Results</a>
     </li>
-    <li class="nav-item" role="presentation">
-      <a href="{% url 'associated_doctors' %}" class="nav-link">
-          Associated Doctors</a>
+    <li class="tab-item-5 {% if request.resolver_match.url_name == 'associated_doctors' %}active{% endif %}">
+      <a href="{% url 'associated_doctors' %}" class="tab-link">Associated Doctors</a>
     </li>
-    <li class="nav-item" role="presentation">
-      <a href="{% url 'assoc_doc_readings' %}" class="nav-link">
-          Associated Doctor's Readings</a>
+    <li class="tab-item-6 {% if request.resolver_match.url_name == 'assoc_doc_readings' %}active{% endif %}">
+      <a href="{% url 'assoc_doc_readings' %}" class="tab-link">Associated Doctor's Readings</a>
     </li>
-    
   </ul>
+</div>

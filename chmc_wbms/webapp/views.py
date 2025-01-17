@@ -1,6 +1,5 @@
 import base64, re
 import os
-import mammoth
 import hashlib
 import pythoncom
 import json
