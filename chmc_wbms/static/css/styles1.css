@@ -728,7 +728,19 @@ h4.ui.heading.size-headinglg-logout{
     margin: 0;
     background-color: #ffffff;
     height: 50px; /* Optional: Set height for alignment */
-  
+}
+
+.navadmin {
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    list-style: none;
+    display: flex;
+    justify-content: space-evenly; /* Even spacing between tabs */
+    align-items: center;          /* Center content vertically */
+    padding: 0;
+    margin: 0;
+    background-color: #ffffff;
+    height: 50px; /* Optional: Set height for alignment */
 }
 
 /* Tab items */
@@ -768,9 +780,36 @@ h4.ui.heading.size-headinglg-logout{
     position: relative;
   }
  
+.nav-item-1 {
+    width: 120px;
+    text-align: center;
+    position: relative;
+}
 
+.nav-item-2 {
+    width: 120px;
+    text-align: center;
+    position: relative;
+}
+
+.nav-item-3 {
+    width: 120px;
+    text-align: center;
+    position: relative;
+}
 /* Tab links */
 .tab-link {
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    color: #1f1f1f;
+    padding: 10px 0;
+    display: block;
+    transition: color 0.3s;
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+.nav-link {
     text-decoration: none;
     font-size: 16px;
     font-weight: bold;
@@ -786,6 +825,10 @@ h4.ui.heading.size-headinglg-logout{
   color: #6200ea; /* Purple for active tab */
 }
 
+.nav-item.active .nav-link {
+    color: #6200ea; /* Purple for active tab */
+}
+
 .tab-item.active::after {
   content: "";
   position: absolute;
@@ -798,10 +841,44 @@ h4.ui.heading.size-headinglg-logout{
   margin: 0 auto;
 }
 
+.nav-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #6200ea; /* Purple underline */
+    width: 50%; /* Underline width */
+    margin: 0 auto;
+  }
+
 /* Hover effect */
 .tab-link:hover {
   color: #6200ea;
 }
+
+.nav-link:hover {
+    color: #6200ea;
+  }
+
 h4 a {
     color: rgb(13 110 253);
+}
+
+.modal-dialog {
+    width: 800px; /* Set your desired width */
+    max-width: 90%; /* Ensure responsiveness */
+}
+
+.modal-content.two {
+    height: 875px; /* Set your desired height */
+    max-height: none; /* Ensure responsiveness */
+    overflow: visible;
+}
+
+.modal-body-admin {
+    position: relative;
+    flex: 1 1 auto;
+    padding: var(--bs-modal-padding);
 }

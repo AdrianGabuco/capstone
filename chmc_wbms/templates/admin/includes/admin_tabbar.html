@@ -1,14 +1,14 @@
 <div class="container mt-5"></div>
-<ul class="nav">
-    <li class="nav-item">
+<ul class="navadmin">
+    <li class="nav-item-1 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
       <a  href="{% url 'admin_dashboard' %}" class="nav-link">
           Home</a>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item-2 {% if request.resolver_match.url_name == 'manage_accounts' %}active{% endif %}" role="presentation">
       <a  href="{% url 'manage_accounts' %}" class="nav-link">
           Manage Accounts</a>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item-3 {% if request.resolver_match.url_name == 'patients_list' %}active{% endif %}" role="presentation">
       <a href="{% url 'patients_list' %}" class="nav-link">
           Patients List</a>
     </li>

@@ -1,5 +1,3 @@
-
-
 {% extends 'admin/admin_base.html' %}
 {% load static %}
 {% block title %}Admin Dashboard{% endblock %}
@@ -9,19 +7,19 @@
     <h2>Manage Accounts</h2>
     <div class="row">
         {% for account in accounts %}
-            <div class="col-md-3 mb-4">
-                <div class="card">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#accountModal{{ account.id }}">
-                        <img src="{{ account.image.url }}" class="card-img-top" alt="Account Image">
-                    
-                    <div class="card">
-                        <h5 class="card-title">
+                        <img src="{{ account.image.url }}" class="card-img-top img-fluid custom-img" alt="Account Image">
+                    </a>
+                    <div class="card-body">
+                        <h6 class="card-title mb-1">
                             {% if account.prefix %}
                                 {{ account.prefix }} {{ account.first_name }} {{ account.last_name }}
                             {% else %}
                                 {{ account.first_name }} {{ account.last_name }}
                             {% endif %}
-                        </h5>
+                        </h6>
                         <p class="card-text">
                             {% if account.is_employee %}
                                 <strong>Account Type:</strong> Employee
@@ -32,10 +30,9 @@
                             {% endif %}
                         </p>
                     </div>
-                    </a>
                 </div>
             </div>
-    
+
             <!-- Modal for Account Details -->
             <div class="modal fade" id="accountModal{{ account.id }}" tabindex="-1" aria-labelledby="accountModalLabel{{ account.id }}" aria-hidden="true">
                 <div class="modal-dialog">
@@ -49,15 +46,15 @@
                                 {% endif %}
                             </h5>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body-admin">
                             <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% elif account.is_clinic_doctor %} Clinic Doctor{% endif %}</p>
                             <p><strong>Email:</strong> {{ account.email }}</p>
                             <p><strong>Mobile Number:</strong> {{ account.mobile_number }}</p>
                             <p>
                                 {% if account.is_associated_doctor %}
-                                <img src="{{ account.signature_image.url }}" class="card-img-top" alt="Account Image">
+                                <img src="{{ account.signature_image.url }}" class="card-img-top1" alt="Account Image">
                                 {% elif account.is_clinic_doctor %}
-                                <img src="{{ account.signature_image.url }}" class="card-img-top" alt="Account Image">
+                                <img src="{{ account.signature_image.url }}" class="card-img-top1" alt="Account Image">
                                 {% endif %}
                             </p>
                         </div>
