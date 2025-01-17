@@ -3,56 +3,97 @@
 {% block title %}Patients List{% endblock %}
 
 {% block content %}
-
+{% load static %}
 <h2>Patients List</h2>
 
-<body class="bg-light">
-
-    <div class="container my-5">
-        <div class="table-responsive">
-          <table class="table table-bordered text-center align-middle">
-            <thead class="bg-primary text-white">
-              <tr>
-                <th>PATIENT ID</th>
-                <th>FULL NAME</th>
-                <th>TYPE OF SERVICE</th>
-                <th>APPOINTMENT DATE</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>PID001</td>
-                <td>John Doe</td>
-                <td>General Checkup</td>
-                <td>2024-01-25</td>
-              </tr>
-              <tr>
-                <td>PID002</td>
-                <td>Jane Smith</td>
-                <td>Dental Cleaning</td>
-                <td>2024-02-10</td>
-              </tr>
-              <tr>
-                <td>PID003</td>
-                <td>Mark Wilson</td>
-                <td>Eye Checkup</td>
-                <td>2024-03-05</td>
-              </tr>
-              <tr>
-                <td>PID004</td>
-                <td>Emily Davis</td>
-                <td>Physical Therapy</td>
-                <td>2024-04-15</td>
-              </tr>
-              <tr>
-                <td>PID005</td>
-                <td>Michael Brown</td>
-                <td>Cardiology</td>
-                <td>2024-05-01</td>
-              </tr>
-            </tbody>
-          </table>
+<div class="container my-5">
+    <div class="row">
+        {% for patient in patients %}
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow-sm">
+              {% if patient.image %}
+              <img src="{{ patient.image.url }}" alt="Patient Image" width="100" height="100">
+              {% else %}
+              <img src="/static/image/profile_ICON.png" alt="Default Profile Icon" width="100" height="100">
+              {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ patient.patient_full_name_last_name_start }}</h5>
+                    <p class="card-text text-muted">{{ patient.get_formatted_id }}</p>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#patientModal{{ patient.id }}">
+                        View Details
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
 
+        <!-- Modal -->
+        <div class="modal fade" id="patientModal{{ patient.id }}" tabindex="-1" aria-labelledby="patientModalLabel{{ patient.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="patientModalLabel{{ patient.id }}">{{ patient.get_full_name_with_middle_initial }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-4">
+                          {% if patient.image %}
+                          <img src="{{ patient.image.url }}" alt="Patient Image" width="100" height="100">
+                          {% else %}
+                          <img src="/static/image/profile_ICON.png" alt="Default Profile Icon" width="100" height="100">
+                          {% endif %}
+                        </div>
+                        <p><strong>Full Name:</strong> {{ patient.get_full_name_with_middle_initial }}</p>
+                        <p><strong>Formatted ID:</strong> {{ patient.get_formatted_id }}</p>
+                        <p><strong>Age:</strong> {{ patient.age }}</p>
+                        <p><strong>Sex:</strong> {{ patient.sex }}</p>
+                        <p><strong>Address:</strong> {{ patient.address }}</p>
+                        <p><strong>Contact Number:</strong> {{ patient.contact_number }}</p>
+                        <hr>
+                        <h5>Examinations</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Service Type</th>
+                                    <th>Date Created</th>
+                                    <th>Payment Method</th>
+                                    <th>Payment Amount</th>
+                                    <th>Payment Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exam in patient.examinations.all %}
+                                <tr>
+                                  <td>
+                                    {% for service in exam.service_types.all %}
+                                      {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                  </td>
+                                    <td>{{ exam.date_created }}</td>
+                                    <td>{{ exam.payment_method }}</td>
+                                    <td>{{ exam.payment_amount }}</td>
+                                    <td>{{ exam.payment_status }}</td>
+                                    <td>
+                                        <a class="btn btn-warning btn-sm">Edit</a>
+                                        <a class="btn btn-danger btn-sm">Delete</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No Examinations Found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-success">Edit Patient</a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

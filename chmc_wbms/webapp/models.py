@@ -1,9 +1,11 @@
 import hashlib
+import base64
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
 from tinymce.models import HTMLField
+from django.core.files.base import ContentFile
 
 
 class CustomUserManager(BaseUserManager):
@@ -59,6 +61,20 @@ class Patient(models.Model):
         middle_initial = f"{self.middle_name[0].upper()}." if self.middle_name else ""
         full_name = f"{self.last_name}, {self.first_name} {middle_initial}".strip()
         return full_name
+    
+    def get_formatted_id(self):
+    # Determine the required number of digits based on total patient count
+        total_patients = Patient.objects.count()
+        num_digits = len(str(total_patients)) + 1  # One extra digit to future-proof
+        return f"PID-{self.id:0{num_digits}d}"
+    def get_secure_hashed_id(self):
+        """Return the SHA-256 hash of the formatted ID with salt and pepper."""
+        salt = "Patient2025"
+        pepper = "Identity2024"
+        formatted_id = self.get_formatted_id()
+        to_hash = f"{salt}{formatted_id}{pepper}"
+        hashed_id = hashlib.sha256(to_hash.encode()).hexdigest()
+        return hashed_id
 
 class CustomUser(AbstractUser):
 
@@ -122,6 +138,7 @@ class Examination(models.Model):
     document = models.FileField(upload_to='examination_documents/', null=True, blank=True)
     edited_document = models.FileField(upload_to='examination_documents/edited', null=True, blank=True)  # Edited document
     original_document_hash = models.CharField(max_length=64, null=True, blank=True)
+    result_image = models.ImageField(upload_to='examination_results/', null=True, blank=True)  # New field for result image
 
     def calculate_document_hash(self, file_path):
         """Calculate SHA-256 hash of a file."""
@@ -180,13 +197,13 @@ class Examination(models.Model):
     
 class Payment(models.Model):
     PAYMENT_METHODS = [
-        ('cash', 'Cash'),
-        ('gcash', 'GCash'),
+        ('Cash', 'Cash'),
+        ('Gcash', 'GCash'),
     ]
     examination = models.ForeignKey(Examination, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
     date = models.DateTimeField(default=timezone.now)  # Date of payment
-    method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cash')  # Payment method
+    method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='Cash')  # Payment method
     status = models.CharField(max_length=100, choices=[('Paid', 'Paid'), ('Pending', 'Pending')], default='Pending')
 
     def __str__(self):

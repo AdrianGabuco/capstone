@@ -412,3 +412,46 @@ class UploadEditedDocumentForm(forms.ModelForm):
     class Meta:
         model = Examination
         fields = ['edited_document']
+        
+class UploadResultImageForm(forms.ModelForm):
+    result_image_base64 = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    class Meta:
+        model = Examination
+        fields = ['result_image_base64']
+
+
+
+
+class EditExaminationForm(forms.ModelForm):
+    # Patient fields
+    patient_first_name = forms.CharField(max_length=100, required=False, label="First Name")
+    patient_middle_name = forms.CharField(max_length=100, required=False, label="Middle Name")
+    patient_last_name = forms.CharField(max_length=100, required=False, label="Last Name")
+
+    # Service types (multiple checkboxes)
+    service_types = forms.ModelMultipleChoiceField(
+        queryset=ServiceType.objects.all(),
+        widget=forms.CheckboxSelectMultiple(),
+        required=False,
+        label="Type of Service"
+    )
+
+    # Payment fields
+    payment_method = forms.ChoiceField(
+        choices=Payment.PAYMENT_METHODS,
+        required=False,
+        label="Payment Method"
+    )
+    payment_status = forms.ChoiceField(
+        choices=[('Paid', 'Paid'), ('Pending', 'Pending')],
+        required=False,
+        label="Payment Status"
+    )
+    payment_amount = forms.DecimalField(
+        max_digits=10, decimal_places=2, required=False, label="Payment Amount"
+    )
+
+    class Meta:
+        model = Examination
+        fields = ['service_types']

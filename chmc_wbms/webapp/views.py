@@ -22,7 +22,7 @@ from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
 from datetime import datetime
-from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm, UploadResultImageForm, EditExaminationForm
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from docx import Document
 from docx.shared import Inches
@@ -273,9 +273,23 @@ def edit_profile_view(request, account_id):
 
 @user_passes_test(lambda u: u.is_employee)
 def employee_patients_list_view(request):
-       account = request.user
-       context = {'account': account}
-       return render(request, 'employee/patients_list.html', context)
+    # Fetching all patients, or you can filter as needed
+    patients = Patient.objects.all()
+    examinations = (
+        Examination.objects.select_related('patient', 'attending_doctor')
+        .prefetch_related('service_types', Prefetch('payment_set'))
+        .order_by('-date_created')  # Order by latest examination first
+    )
+    service_types = ServiceType.objects.all()
+
+    account = request.user
+    context = {
+        'account': account,
+        'patients': patients,
+        'service_types' : service_types,
+        'examinations' : examinations
+    }
+    return render(request, 'employee/patients_list.html', context)
 
 
 @user_passes_test(lambda u: u.is_employee)
@@ -331,30 +345,14 @@ def employee_examination_view(request):
         .prefetch_related('service_types', Prefetch('payment_set'))
         .order_by('-date_created')  # Order by latest examination first
     )
+    service_types = ServiceType.objects.all()
 
     context = {
         'account' : account,
         'examinations': examinations,
+        'service_types': service_types
     }
     return render(request, 'employee/examination.html', context)
-
-def get_patient(request, patient_id):
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        return JsonResponse({
-            'success': True,
-            'patient': {
-                'id': patient.id,
-                'first_name': patient.first_name,
-                'last_name': patient.last_name,
-                'age': patient.age,
-                'sex': patient.sex,
-                'address': patient.address,
-                'contact_number': patient.contact_number,
-            }
-        })
-    except Patient.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Patient not found.'})
 
 
 def add_examination(request):
@@ -742,3 +740,79 @@ def search_patient(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"patients": []})
+
+def upload_examination_result_image(request, pk):
+    if request.method == "POST":
+        exam = get_object_or_404(Examination, pk=pk)
+        form = UploadResultImageForm(request.POST, instance=exam)
+        if form.is_valid():
+            image_result = request.POST.get('result_image')
+            if image_result:
+                        # Convert base64 image data to a Django ImageFile
+                format, imgstr = image_result.split(';base64,')  # Get base64 string
+                ext = format.split('/')[1]  # Extract file extension (png, jpeg, etc.)
+                image_result = ContentFile(base64.b64decode(imgstr), name=f"examination_{exam.id}_image.{ext}")
+                        
+                        # Save the new image to the patient instance
+                exam.result_image = image_result
+                exam.save()
+                return redirect('employee_examination')
+        else:
+            return JsonResponse({"status": "error", "message": "Invalid data."})
+    return redirect('employee_examination')
+
+def edit_examination(request, pk):
+    exam = get_object_or_404(Examination, pk=pk)
+    payment = exam.payment_set.first()  # Assuming one payment per exam
+
+    PAYMENT_METHODS = Payment.PAYMENT_METHODS
+    if request.method == 'POST':
+        form = EditExaminationForm(request.POST)
+        if form.is_valid():
+            # Update patient details
+            if form.cleaned_data.get('patient_first_name'):
+                exam.patient.first_name = form.cleaned_data['patient_first_name']
+            if form.cleaned_data.get('patient_middle_name'):
+                exam.patient.middle_name = form.cleaned_data['patient_middle_name']
+            if form.cleaned_data.get('patient_last_name'):
+                exam.patient.last_name = form.cleaned_data['patient_last_name']
+            exam.patient.save()
+
+            # Update service types
+            if form.cleaned_data.get('service_types'):
+                exam.service_types.set(form.cleaned_data['service_types'])
+
+            # Update payment details
+            if payment:
+                payment.method = form.cleaned_data.get('payment_method', payment.method)
+                payment.status = form.cleaned_data.get('payment_status', payment.status)
+                payment.amount = form.cleaned_data.get('payment_amount', payment.amount)
+                payment.save()
+
+            # Use 'next' GET parameter to determine whether to redirect or render
+            next_template = request.GET.get('next_template', 'employee/examination.html')  # Default to 'employee/examination.html'
+            
+            # Check if the next_template is a valid template or return redirect if necessary
+            if next_template == 'employee/examination.html':
+                return render(request, next_template, {'form': form, 'exam': exam, 'PAYMENT_METHODS' : PAYMENT_METHODS})
+            else:
+                return redirect(next_template)
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})
+
+    # Prepopulate the form for GET requests
+    initial_data = {
+        'patient_first_name': exam.patient.first_name,
+        'patient_middle_name': exam.patient.middle_name,
+        'patient_last_name': exam.patient.last_name,
+        'service_types': exam.service_types.all(),
+        'payment_method': payment.method if payment else '',
+        'payment_status': payment.status if payment else '',
+        'payment_amount': payment.amount if payment else '',
+    }
+    form = EditExaminationForm(initial=initial_data)
+
+    # Use the next_template GET parameter to determine which template to render
+    next_template = request.GET.get('next_template', 'employee/examination.html')  # Default to 'employee/examination.html'
+
+    return render(request, next_template, {'form': form, 'exam': exam, 'PAYMENT_METHODS' : PAYMENT_METHODS})
