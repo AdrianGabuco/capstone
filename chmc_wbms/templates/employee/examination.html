@@ -124,60 +124,60 @@
         </div>
         <div class="modal fade" id="editModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="editExaminationModalLabel" aria-hidden="true">
           <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content" style="height: 750px; overflow-y: auto;">
               <form method="POST" action="{% url 'edit_examination' exam.pk %}">
                 {% csrf_token %}
                 <div class="modal-header">
                   <h5 class="modal-title" id="editExaminationModalLabel">Edit Examination</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="max-height: 700px;">
                   <!-- Patient Information -->
-                  <div class="form-group">
+                  <div class="form-floating mb-3">
+                    <input type="text" name="patient_first_name" value="{{ exam.patient.first_name }}" class="form-control rounded-3" id="id_patient_first_name" required>
                     <label for="id_patient_first_name">First Name</label>
-                    <input type="text" name="patient_first_name" value="{{ exam.patient.first_name }}" class="form-control" required>
                   </div>
-                  <div class="form-group">
+                  <div class="form-floating mb-3">
+                    <input type="text" name="patient_middle_name" value="{{ exam.patient.middle_name|default:'' }}" class="form-control rounded-3" id="id_patient_middle_name">
                     <label for="id_patient_middle_name">Middle Name</label>
-                    <input type="text" name="patient_middle_name" value="{{ exam.patient.middle_name|default:'' }}" class="form-control">
                   </div>
-                  <div class="form-group">
+                  <div class="form-floating mb-3">
+                    <input type="text" name="patient_last_name" value="{{ exam.patient.last_name }}" class="form-control rounded-3" id="id_patient_last_name" required>
                     <label for="id_patient_last_name">Last Name</label>
-                    <input type="text" name="patient_last_name" value="{{ exam.patient.last_name }}" class="form-control" required>
                   </div>
         
                   <!-- Service Types -->
-                  <div class="form-group">
+                  <div class="mb-3">
                     <label for="id_service_types">Type of Service</label>
                     <div>
                       {% for service in service_types %}
                         <div class="form-check">
                           <input type="checkbox" name="service_types" value="{{ service.id }}" class="form-check-input"
-                                 {% if service in exam.service_types.all %}checked{% endif %}>
-                          <label class="form-check-label">{{ service.name }}</label>
+                                 {% if service in exam.service_types.all %}checked{% endif %} id="service_{{ service.id }}">
+                          <label class="form-check-label" for="service_{{ service.id }}">{{ service.name }}</label>
                         </div>
                       {% endfor %}
                     </div>
                   </div>
         
                   <!-- Payment Details -->
-                  <div class="form-group">
-                    <label for="id_payment_method">Payment Method</label>
-                    <select name="payment_method" class="form-control">
+                  <div class="form-floating mb-3">
+                    <select name="payment_method" class="form-select" id="id_payment_method">
                       <option value="Cash" {% if exam.payment_set.first.method == 'Cash' %}selected{% endif %}>Cash</option>
                       <option value="Gcash" {% if exam.payment_set.first.method == 'Gcash' %}selected{% endif %}>Gcash</option>
                     </select>
+                    <label for="id_payment_method">Payment Method</label>
                   </div>
-                  <div class="form-group">
+                  <div class="form-floating mb-3">
+                    <input type="number" name="payment_amount" step="0.01" value="{{ exam.payment_set.first.amount }}" class="form-control rounded-3" id="id_payment_amount">
                     <label for="id_payment_amount">Payment Amount</label>
-                    <input type="number" name="payment_amount" step="0.01" value="{{ exam.payment_set.first.amount }}" class="form-control">
                   </div>
-                  <div class="form-group">
-                    <label for="id_payment_status">Payment Status</label>
-                    <select name="payment_status" class="form-control">
+                  <div class="form-floating mb-3">
+                    <select name="payment_status" class="form-select" id="id_payment_status">
                       <option value="Paid" {% if exam.payment_set.first.status == 'Paid' %}selected{% endif %}>Paid</option>
                       <option value="Pending" {% if exam.payment_set.first.status == 'Pending' %}selected{% endif %}>Pending</option>
                     </select>
+                    <label for="id_payment_status">Payment Status</label>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -188,6 +188,7 @@
             </div>
           </div>
         </div>
+        
         {% empty %}
         <tr>
           <td colspan="7" style="text-align: center;">No examination records found.</td>

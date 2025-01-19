@@ -5,6 +5,22 @@
 
 {% block content %}
 {% load static widget_tweaks %}
+<style>
+    .form-container {
+        max-height: 70vh; /* Set a maximum height */
+        overflow-y: auto; /* Enable vertical scrolling */
+        padding: 20px;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    .form-control {
+        padding-left: 15px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+</style>
+
 <!-- Modal for Editing Account -->
 <div class="form-container">
     <h2 class="mb-4">Edit Account</h2>

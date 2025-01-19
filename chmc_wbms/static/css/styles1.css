@@ -340,7 +340,13 @@
 }
 
 .rowlinetwo_one {
-    margin-left: 46px;
+    gap: var(--space-5xl);
+    display: flex;
+    flex: 1;
+    align-items: center;
+}
+
+.rowlinetwo_one-1 {
     gap: var(--space-5xl);
     display: flex;
     flex: 1;
@@ -872,7 +878,13 @@ h4 a {
 }
 
 .modal-content.two {
-    height: 875px; /* Set your desired height */
+    height: 570px; /* Set your desired height */
+    max-height: none; /* Ensure responsiveness */
+    overflow: visible;
+}
+
+.modal-content.three {
+    height: 700px; /* Set your desired height */
     max-height: none; /* Ensure responsiveness */
     overflow: visible;
 }

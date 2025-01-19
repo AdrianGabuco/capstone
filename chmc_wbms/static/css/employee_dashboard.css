@@ -34,3 +34,7 @@
     padding-top: 10px; /* Add spacing for password fields */
 }
 
+.scrollable-row {
+    max-height: 500px; /* Adjust height as needed */
+    overflow-y: auto;
+}

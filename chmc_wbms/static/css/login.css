@@ -43,7 +43,7 @@
 .section_content_image-column {
     padding-left: 16px;
     padding-right: 16px;
-    width: 42%;
+    width: 70%;
     @media only screen and (max-width: 1050px) {
         width: 100%;
     }
@@ -63,7 +63,7 @@
     align-items: start;
 }
 
-.section_content_image{
+.section_content_image {
     margin: auto;
     height: 242px;
     width: 82%;
@@ -93,11 +93,11 @@
 }
 
 .section_form {
-    gap: 44px;
+    gap: 24px; /* Reduced gap for tighter spacing */
     display: flex;
-    flex: 1;
     flex-direction: column;
     align-items: center;
+    width: 100%; /* Ensure full width */
     @media only screen and (max-width: 1050px) {
         align-self: stretch;
     }
@@ -105,46 +105,26 @@
 
 .section_form_title {
     color: var(--black_900) !important;
-    align-self: end;
+    text-align: center;
+    margin-bottom: 24px; /* Center and space out the title */
 }
 
 .section_form_fields {
-    margin-left: 14px;
-    margin-right: 14px;
-    align-self: stretch;
-    display: flex;
-    flex-direction: column;
-    align-items: end;
-    @media only screen and (max-width: 1050px) {
-        margin-left: 0px;
-        margin-right: 0px;
-    }
+    display: block; /* Change from flex to block to allow the input fields to occupy full width */
+    width: 100%; /* Ensure full width */
 }
 
-.section_form_input--username {
-    color: var(--black_900_33) !important;
-    padding-top: var(--space-xs);
-    padding-bottom: var(--space-xs);
-    padding-right: 20px;
-    padding-left: 20px;
-    background-color: var(--gray_200) !important;
-    box-shadow: 0 7px 4px 0 var(--black_900_33) !important;
-    width: 92%;
-    height: 74%;
-    border-radius: 24px !important;
-}
-
+.section_form_input--username,
 .section_form_input--password {
+    margin-left: 30px;
+    width: 100%; /* Ensure inputs are 100% width */
+    max-width: 500px; /* Limit the maximum width for large screens */
     color: var(--black_900_33) !important;
-    margin-top: 32px;
-    padding: var(--space-xs);
     padding-left: var(--space-4xl);
-    padding-right: var(--space-4xl);
     background-color: var(--gray_200) !important;
     box-shadow: 0 7px 4px 0 var(--black_900_33) !important;
-    width: 92%;
-    height: 74%;
     border-radius: 24px !important;
+    height: 50px; /* Fixed height for consistency */
 }
 
 .forgot-password-link {
@@ -153,14 +133,15 @@
 }
 
 .section_form_button--login {
+    width: 100%; /* Ensure button takes full width */
+    max-width: 380px; /* Match the max-width of the inputs */
     color: var(--black_900_7f) !important;
     margin-top: 20px;
-    margin-right: 108px;
+    margin-left: auto; /* Center the button horizontally */
+    margin-right: auto; /* Center the button horizontally */
     padding-left: 34px;
     padding-right: 34px;
     background-color: var(--blue_a100_6b) !important;
     height: 74px;
     border-radius: 36px !important;
 }
-
-

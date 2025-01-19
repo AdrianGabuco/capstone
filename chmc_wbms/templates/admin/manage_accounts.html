@@ -4,6 +4,14 @@
 
 {% block content %}
 
+<style>
+    .modal-content {
+        border: 2px solidrgb(0, 0, 0); /* Adjust the color and width as needed */
+        border-radius: 8px;       /* Optional: Add rounded corners */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for better visual */
+    }
+</style>
+
     <h2>Manage Accounts</h2>
     <div class="row">
         {% for account in accounts %}
@@ -69,7 +77,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>            
         {% empty %}
             <p>No accounts found.</p>
         {% endfor %}

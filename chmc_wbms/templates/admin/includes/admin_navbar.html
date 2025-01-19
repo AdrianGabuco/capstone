@@ -1,5 +1,34 @@
 {% load static %}
 
+<style>
+    .ui.heading.size-headinglg-logout button {
+        background-color: var(--blue_a100);
+        color: white; /* White font color */
+        border: none;
+        padding: 12px 25px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 50px; /* Makes the button rounded */
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .ui.heading.size-headinglg-logout button:hover {
+        transform: scale(1.05); /* Slightly increases size on hover */
+    }
+
+    .form-control {
+        padding-left: 15px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+
+    .createacc {
+        color: var(--whitea700);
+        font-size: 20px;
+        text-decoration: none;
+    }
+</style>
+
 <div class="headerheaderlog"> 
     <div class="row-1">
         <div class="rowheaderlogo">
@@ -11,16 +40,15 @@
         </div>
         <div class="rowprofileicono">
             <img src="{% static 'image/profile_ICON.png' %}" alt="Profileicon" class="profileiconone">
-            <h4 class="admin ui heading size-headinglg-name">ADMIN</h4>
+            <h4 class="admin ui heading size-headinglg-name mr-4">ADMIN</h4>
             <div class="rowlinetwo_one">
                 <div class="linetwo_one"></div>
-                <!-- Trigger Create Account Modal -->
-                <h4 class="ui heading size-headinglg-logout">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#createAccountModal">CREATE ACCOUNT</a>
-                </h4>
-            </div>
-            <div class="rowlinetwo_one">
-                <div class="linetwo_one"></div>
+                <div class="rowlinetwo_one-1">
+                    <!-- Trigger Create Account Modal -->
+                    <h4 class="ui heading size-headinglg-logout">
+                        <button id="createAccountButton"><a class="createacc" href="#" data-bs-toggle="modal" data-bs-target="#createAccountModal">CREATE ACCOUNT</a></button>
+                    </h4>
+                </div>
                 <h4 class="ui heading size-headinglg-logout">
                     <a href="{% url 'admin_logout' %}" data-bs-toggle="modal" data-bs-target="#exampleModal">LOGOUT</a>
                 </h4>
@@ -52,7 +80,7 @@
                             <h5 class="modal-title" id="createAccountLabel">Create New Account</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body" style="max-height: 600px;">
                             <!-- Include the Create Account form here -->
                             <div class="container">
                                 {% if messages %}
@@ -66,17 +94,19 @@
                                 {% endif %}
                                 <form method="post" enctype="multipart/form-data" onsubmit="return validatePassword()" action="{% url 'create_account' %}">
                                     {% csrf_token %}
-                                    <div class="form-floating mb-3">
-                                        <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name" required>
-                                        <label for="floatingFirst">First Name</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name" required>
-                                        <label for="floatingLast">Last Name</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input name="middle_initial" type="text" class="form-control rounded-3" id="floatingMiddle" placeholder="Middle Name">
-                                        <label for="floatingMiddle">Middle Name (Optional)</label>
+                                    <div class="d-flex gap-3 mb-3">
+                                        <div class="form-floating flex-grow-1">
+                                            <input name="first_name" type="text" class="form-control rounded-3" id="floatingFirst" placeholder="First Name" required>
+                                            <label for="floatingFirst">First Name</label>
+                                        </div>
+                                        <div class="form-floating flex-grow-1">
+                                            <input name="last_name" type="text" class="form-control rounded-3" id="floatingLast" placeholder="Last Name" required>
+                                            <label for="floatingLast">Last Name</label>
+                                        </div>
+                                        <div class="form-floating flex-grow-1">
+                                            <input name="middle_initial" type="text" class="form-control rounded-3" id="floatingMiddle" placeholder="Middle Name">
+                                            <label for="floatingMiddle">Middle Name (Optional)</label>
+                                        </div>
                                     </div>
                                     <div class="form-floating mb-3">
                                         <select id="prefix" name="prefix" class="form-select">
@@ -121,8 +151,10 @@
                                         <label for="signatureUpload" class="form-label">Upload Signature</label>
                                         <input type="file" class="form-control" id="signatureUpload" name="signature_image">
                                     </div>
-                                    <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Create Account</button>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <div class="mt-4" style="position: absolute; bottom: 0px; right: 30px">
+                                        <button class="btn btn-primary" type="submit">Create Account</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
