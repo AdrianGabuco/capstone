@@ -37,7 +37,7 @@
               No Document
             {% endif %}
 
-            <button type="button" class="btn btn-secondary" onclick="openModal({{ exam.pk }})">Upload Edited Document</button>
+            <button type="button" class="btn btn-secondary" onclick="openModal({{ exam.pk }})" title="Edited Document">Upload Edited Document</button>
             </div>
             {% if exam.result_image %}
               <a href="{{ exam.result_image.url }}" target="_blank" class="btn btn-success">View Examination Result</a>

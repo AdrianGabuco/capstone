@@ -536,11 +536,6 @@ def generate_examination_document(examination):
     examination.document.name = os.path.relpath(output_full_path, settings.MEDIA_ROOT).replace(os.sep, '/')
     examination.save()
 
-def docx_to_html(docx_file_path):
-    with open(docx_file_path, "rb") as docx_file:
-        result = mammoth.convert(docx_file)
-        html_content = result.value  # This is the converted HTML content
-    return html_content
 
 @user_passes_test(lambda u: u.is_employee)
 def edit_document(request, examination_id):
