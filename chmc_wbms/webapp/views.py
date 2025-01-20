@@ -21,38 +21,13 @@ from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
 from datetime import datetime
-from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm, UploadResultImageForm, EditExaminationForm
+from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm, UploadResultImageForm, EditExaminationForm, PatientEditForm
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from docx import Document
 from docx.shared import Inches
 from django.conf import  settings
 from django.core.exceptions import ObjectDoesNotExist
 
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            
-            # Determine user type and redirect accordingly
-            if user.is_superuser:  # Assuming superuser is the admin
-                return redirect('admin_dashboard')
-            elif hasattr(user, 'is_employee') and user.is_employee:
-                return redirect('employee_dashboard')
-            elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
-                return redirect('assoc_doc_dashboard')
-            else:
-                # Redirect to a default page or show an error
-                messages.error(request, "Access not allowed.")
-                return redirect('login')  # Replace 'login' with your login page name
-        else:
-            messages.error(request, "Invalid credentials")
-            
-    return render(request, 'login.html')
 
 @csrf_protect
 def admin_login_view(request):
@@ -83,20 +58,23 @@ def employee_login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
 
-            if user is not None and hasattr(user, 'is_employee') and user.is_employee:
-                login(request, user)
-                # Set custom session data (Django manages session storage automatically)
-
-                response = HttpResponseRedirect(reverse('employee_dashboard'))
-
-                return response
+            # Check if user is an employee or a clinic doctor
+            if user is not None:
+                if (hasattr(user, 'is_employee') and user.is_employee) or \
+                   (hasattr(user, 'is_clinic_doctor') and user.is_clinic_doctor):
+                    login(request, user)
+                    # Redirect to employee dashboard
+                    return HttpResponseRedirect(reverse('employee_dashboard'))
+                elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+                    login(request, user)
+                    # Redirect to associated doctor dashboard
+                    return HttpResponseRedirect(reverse('assocdoc_dashboard'))
             else:
                 messages.error(request, "Invalid credentials or unauthorized access.")
     else:
         form = AuthenticationForm()
 
     return render(request, 'employee/employee_login.html', {'form': form})
-
 
 @user_passes_test(lambda u: u.is_superuser)
 def manage_account_view(request):
@@ -199,7 +177,7 @@ def create_account_view(request):
         form = UserCreationForm()
     return render(request, 'admin/admin_dashboard.html', {'form': form})
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_dashboard_view(request):
     account = request.user
     # Fetch all appointments and service types for the dashboard
@@ -270,41 +248,43 @@ def edit_profile_view(request, account_id):
     return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
 
 
-@user_passes_test(lambda u: u.is_employee)
-def employee_patients_list_view(request):
-    # Fetching all patients, or you can filter as needed
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
+def employee_patients_list_view(request, patient_id=None):
     patients = Patient.objects.all()
-    examinations = (
-        Examination.objects.select_related('patient', 'attending_doctor')
-        .prefetch_related('service_types', Prefetch('payment_set'))
-        .order_by('-date_created')  # Order by latest examination first
-    )
+    examinations = Examination.objects.select_related('patient', 'attending_doctor') \
+        .prefetch_related('service_types', Prefetch('payment_set')).order_by('-date_created')
     service_types = ServiceType.objects.all()
+
+    # Handle the optional patient_id
+    selected_patient = None
+    if patient_id:
+        selected_patient = get_object_or_404(Patient, id=patient_id)
 
     account = request.user
     context = {
         'account': account,
         'patients': patients,
-        'service_types' : service_types,
-        'examinations' : examinations
+        'service_types': service_types,
+        'examinations': examinations,
+        'selected_patient': selected_patient,  # Pass the specific patient if needed
     }
     return render(request, 'employee/patients_list.html', context)
 
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def document_results_view(request):
        account = request.user
        context = {'account': account}
        return render(request, 'employee/document_results.html', context)
 
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def assoc_doc_readings_view(request):
        account = request.user
        context = {'account': account}
        return render(request, 'employee/assoc_doc_readings.html', context)
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def associated_doctors_view(request):
        account = request.user
        associated_doctors = CustomUser.objects.filter(is_associated_doctor=True)
@@ -335,7 +315,7 @@ def add_appointment(request):
     }
     return render(request, 'employee/add_appointment.html', context)
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_examination_view(request):
     # Fetch examinations along with related patient and payment details
     account = request.user
@@ -537,7 +517,7 @@ def generate_examination_document(examination):
     examination.save()
 
 
-@user_passes_test(lambda u: u.is_employee)
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def edit_document(request, examination_id):
     account = request.user
     examination = Examination.objects.get(id=examination_id)
@@ -553,12 +533,6 @@ def edit_document(request, examination_id):
         'account': account,
         'document_url': document_url
     })
-
-def download_document(request, pk):
-    examination = get_object_or_404(Examination, pk=pk)
-    if examination.document:
-        return FileResponse(examination.document.open(), as_attachment=True, filename=examination.document.name)
-    return redirect('employee_examination')  # Redirect to the examination list if no document.
 
 def upload_edited_document(request, pk):
     examination = get_object_or_404(Examination, pk=pk)
@@ -810,3 +784,27 @@ def edit_examination(request, pk):
     next_template = request.GET.get('next_template', 'employee/examination.html')  # Default to 'employee/examination.html'
 
     return render(request, next_template, {'form': form, 'exam': exam, 'PAYMENT_METHODS' : PAYMENT_METHODS})
+
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
+def edit_patient(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    if request.method == 'POST':
+        form = PatientEditForm(request.POST, request.FILES, instance=patient)
+        if form.is_valid():
+            form.save()
+            return redirect('employee_patients_list_with_id', patient_id=patient.id)  # Redirect after saving changes
+    else:
+        form = PatientEditForm(instance=patient)
+    
+    account = request.user
+    context = {
+        'form': form,
+        'patient': patient,
+        'account': account,
+    }
+    return render(request, 'employee/edit_patient.html', context)
+
+@user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_dashboard_view(request):
+    account = request.user
+    return render(request, 'associated_doctor/assocdoc_dashboard.html', {'account': account})

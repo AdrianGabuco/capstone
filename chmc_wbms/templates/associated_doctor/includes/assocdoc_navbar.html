@@ -1,0 +1,86 @@
+{% load static %}
+     
+<div class="headerheaderlog"> 
+    <div class="row-1">
+        <div class="rowheaderlogo">
+            <img src="{% static 'image/Icon.png' %}" alt="Admin Dashboard Logo" class="headerlogo_one" />
+            <p class="curehealth-1 ui text size-textxs">
+                <span class="curehealth-span"> CURE</span>
+                <span class="curehealth-span-1"> HEATLH <br />MEDICAL CLINIC<br />ONLINE SYSTEM</span>
+            </p>
+        </div>
+        <div class="rowprofileicono d-flex align-items-center">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#accountModal{{ account.id }}" class="d-flex align-items-center mr-4">
+            {% if user.image %}
+            <img src="{{ user.image.url }}" alt="Profile Icon" class="profileiconone">
+            {% else %}
+            <img src="{% static 'image/profile_ICON.png' %}" alt="Default Profile Icon" class="profileiconone">
+            {% endif %}
+
+            <!-- User Full Name with Prefix -->
+            <h4 class="admin ui heading size-headinglg-name ms-3">
+                {% if user.prefix %}
+                    {{ user.prefix }} {{ user.first_name }} {{ user.last_name }}
+                {% else %}
+                    {{ user.first_name }} {{ user.last_name }}
+                {% endif %}
+            </h4>
+            </a>
+            <div class="rowlinetwo_one">
+                <div class="linetwo_one"></div>
+                <h4 class="ui heading size-headinglg-logout"><a href="{% url 'employee_logout' %}" data-bs-toggle="modal" data-bs-target="#exampleModal">LOGOUT</a></h4>
+            </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">CONFIRMATION</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to Logout?
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{% url 'employee_logout' %}"><button type="button" class="btn btn-primary">Logout</button></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <!-- Modal for Edit Profile Details -->
+            <div class="modal fade" id="accountModal{{ account.id }}" tabindex="-1" aria-labelledby="accountModalLabel{{ account.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            {% if user.image %}
+                            <img src="{{ user.image.url }}" alt="Profile Icon" class="profileiconone">
+                            {% else %}
+                            <img src="{% static 'image/profile_ICON.png' %}" alt="Default Profile Icon" class="profileiconone">
+                            {% endif %}
+                            <h5 class="modal-title" id="accountModalLabel{{ account.id }}">
+                                {% if account.prefix %}
+                                    {{ account.prefix }} {{ account.first_name }} {{ account.last_name }}
+                                {% else %}
+                                    {{ account.first_name }} {{ account.last_name }}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Account Type:</strong> {% if account.is_employee %} Employee {% elif account.is_associated_doctor %} Associated Doctor {% endif %}</p>
+                            <p><strong>Email:</strong> {{ account.email }}</p>
+                            <p><strong>Mobile Number:</strong> {{ account.mobile_number }}</p>
+                            <!-- Add more fields here as needed -->
+                        </div>
+                        <div class="modal-footer">
+                            <!-- Edit button redirects to an edit view -->
+                            <a href="{% url 'edit_profile' account.id %}" class="btn btn-primary">Edit Profile</a>
+                                        
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

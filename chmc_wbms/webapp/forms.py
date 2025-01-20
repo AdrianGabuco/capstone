@@ -455,3 +455,9 @@ class EditExaminationForm(forms.ModelForm):
     class Meta:
         model = Examination
         fields = ['service_types']
+
+
+class PatientEditForm(forms.ModelForm):
+    class Meta:
+        model = Patient
+        fields = ['first_name', 'middle_name', 'last_name', 'age', 'sex', 'contact_number', 'address']

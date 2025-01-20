@@ -51,45 +51,227 @@
                             <p><strong>Contact Number:</strong> {{ patient.contact_number }}</p>
                             <hr>
                             <h5>Examinations</h5>
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Service Type</th>
-                                        <th>Date Created</th>
-                                        <th>Payment Method</th>
-                                        <th>Payment Amount</th>
-                                        <th>Payment Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for exam in patient.examinations.all %}
-                                    <tr>
+                            <div class="container my-4">
+                                <div class="table-responsive" style="max-height: 550px; overflow-y: auto; position: relative;">
+                                  <table class="table table-bordered text-center align-middle">
+                                    <thead class="bg-primary text-white" style="position: sticky; top: 0; z-index: 1020;">
+                                      <tr>
+                                        <th>ACTIONS</th>
+                                        <th>PATIENT ID</th>
+                                        <th>PATIENT NAME</th>
+                                        <th>TYPE OF SERVICE</th>
+                                        <th>EXAMINATION DATE</th>
+                                        <th>PAYMENT METHOD</th>
+                                        <th>PAYMENT AMOUNT</th>
+                                        <th>PAYMENT STATUS</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {% for exam in patient.examinations.all %}
+                                      <tr>
+                                        <!-- Actions -->
                                         <td>
-                                            {% for service in exam.service_types.all %}
+                                          <div class="btn-container">
+                                            {% if exam.has_edited_document %}
+                                              <!-- View Document -->
+                                              <a href="{% url 'view_document' exam.pk %}" class="btnex btn-primary" title="View Document">
+                                                <span class="material-symbols-outlined">visibility</span>
+                                                <span class="btn-text">View Document</span>
+                                              </a>
+                                            {% elif exam.document %}
+                                              <!-- Download Document -->
+                                              <a href="{{ exam.document.url }}" target="_blank" class="btnex btn-primary" title="Download Document">
+                                                <span class="material-symbols-outlined">download</span>
+                                                <span class="btn-text">Download Document</span>
+                                              </a>
+                                            {% else %}
+                                              <span class="no-document">No Document</span>
+                                            {% endif %}
+                                        
+                                            <!-- Upload Edited Document -->
+                                            <button type="button" class="btnex btn-secondary" onclick="openModal({{ exam.pk }})" title="Upload Edited Document">
+                                              <span class="material-symbols-outlined">upload</span>
+                                              <span class="btn-text">Upload Edited Document</span>
+                                            </button>
+                                        
+                                            {% if exam.result_image %}
+                                              <!-- View Examination Result -->
+                                              <a href="{{ exam.result_image.url }}" target="_blank" class="btnex btn-success" title="View Examination Result">
+                                                <span class="material-symbols-outlined">panorama</span>
+                                                <span class="btn-text">View Examination Result</span>
+                                              </a>
+                                        
+                                              <!-- Change Examination Result -->
+                                              <button type="button" class="btnex btn-warning" onclick="openCameraModal({{ exam.pk }}, true)" title="Change Examination Result Image">
+                                                <span class="material-symbols-outlined">add_photo_alternate</span>
+                                                <span class="btn-text">Change Examination Result Image</span>
+                                              </button>
+                                            {% else %}
+                                              <!-- Upload Examination Result -->
+                                              <button type="button" class="btnex btn-info" onclick="openCameraModal({{ exam.pk }}, false)" title="Upload Examination Result Image">
+                                                <span class="material-symbols-outlined">add_a_photo</span>
+                                                <span class="btn-text">Upload Examination Result Image</span>
+                                              </button>
+                                            {% endif %}
+                                        
+                                            <!-- Edit Examination -->
+                                            <button type="button" class="btnex btn-primary" onclick="openEditModal({{ exam.pk }})" title="Edit Examination">
+                                              <span class="material-symbols-outlined">edit</span>
+                                              <span class="btn-text">Edit Examination</span>
+                                            </button>
+                                          </div>
+                                        </td>
+                                        <!-- Patient Details -->
+                                        <td>{{ exam.patient.get_formatted_id }}</td>
+                                        <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>
+                              
+                                        <!-- Service Types -->
+                                        <td>
+                                          {% for service in exam.service_types.all %}
                                             {{ service.name }}{% if not forloop.last %}, {% endif %}
-                                            {% endfor %}
+                                          {% endfor %}
                                         </td>
-                                        <td>{{ exam.date_created }}</td>
-                                        <td>{{ exam.payment_method }}</td>
-                                        <td>{{ exam.payment_amount }}</td>
-                                        <td>{{ exam.payment_status }}</td>
+                              
+                                        <!-- Examination Date -->
+                                        <td>{{ exam.date_created|date:"F j, Y, g:i a" }}</td>
+                              
+                                        <!-- Payment Details -->
                                         <td>
-                                            <a class="btn btn-warning btn-sm">Edit</a>
-                                            <a class="btn btn-danger btn-sm">Delete</a>
+                                          {% with exam.payment_set.first as payment %}
+                                            {{ payment.method|default:"N/A" }}
+                                          {% endwith %}
                                         </td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="6" class="text-center">No Examinations Found</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                        <td>
+                                          {% with exam.payment_set.first as payment %}
+                                            {{ payment.amount|default:"0.00" }}
+                                          {% endwith %}
+                                        </td>
+                                        <td>
+                                          {% with exam.payment_set.first as payment %}
+                                            {{ payment.status|default:"No Payment" }}
+                                          {% endwith %}
+                                        </td>
+                                      </tr>
+                              
+                                      <!-- Upload Edited Modal -->
+                                      <div class="modal fade" id="uploadModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                          <div class="modal-content">
+                                            <div class="modal-header">
+                                              <h5 class="modal-title" id="uploadModalLabel">Upload Edited Document</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                              <form method="POST" enctype="multipart/form-data" action="{% url 'upload_edited_document' exam.pk %}">
+                                                {% csrf_token %}
+                                                <input type="file" name="edited_document" class="form-control" required>
+                                                <button type="submit" class="btn btn-primary mt-3">Upload Document</button>
+                                              </form>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <!-- Webcam Modal -->
+                                      <div class="modal fade" id="cameraModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="cameraModalLabel-{{ exam.pk }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                          <div class="modal-content">
+                                            <div class="modal-header">
+                                              <h5 class="modal-title" id="cameraModalLabel-{{ exam.pk }}">Upload Examination Result Image</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                              <video id="video-{{ exam.pk }}" width="100%" autoplay></video>
+                                              <canvas id="canvas-{{ exam.pk }}" style="display: none;"></canvas>
+                                              <button id="captureButton-{{ exam.pk }}" class="btn btn-primary mt-3">Capture</button>
+                                              <form id="uploadForm-{{ exam.pk }}" method="POST" enctype="multipart/form-data" style="display: none;" action="{% url 'upload_examination_result_image' exam.pk %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="result_image" id="resultInput-{{ exam.pk }}">
+                                                <button type="submit" class="btn btn-success mt-3">Save Image</button>
+                                              </form>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="modal fade" id="editModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="editExaminationModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                          <div class="modal-content" style="height: 750px; overflow-y: auto;">
+                                            <form method="POST" action="{% url 'edit_examination' exam.pk %}">
+                                              {% csrf_token %}
+                                              <div class="modal-header">
+                                                <h5 class="modal-title" id="editExaminationModalLabel">Edit Examination</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                              </div>
+                                              <div class="modal-body" style="max-height: 700px;">
+                                                <!-- Patient Information -->
+                                                <div class="form-floating mb-3">
+                                                  <input type="text" name="patient_first_name" value="{{ exam.patient.first_name }}" class="form-control rounded-3" id="id_patient_first_name" required>
+                                                  <label for="id_patient_first_name">First Name</label>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                  <input type="text" name="patient_middle_name" value="{{ exam.patient.middle_name|default:'' }}" class="form-control rounded-3" id="id_patient_middle_name">
+                                                  <label for="id_patient_middle_name">Middle Name</label>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                  <input type="text" name="patient_last_name" value="{{ exam.patient.last_name }}" class="form-control rounded-3" id="id_patient_last_name" required>
+                                                  <label for="id_patient_last_name">Last Name</label>
+                                                </div>
+                                      
+                                                <!-- Service Types -->
+                                                <div class="mb-3">
+                                                  <label for="id_service_types">Type of Service</label>
+                                                  <div>
+                                                    {% for service in service_types %}
+                                                      <div class="form-check">
+                                                        <input type="checkbox" name="service_types" value="{{ service.id }}" class="form-check-input"
+                                                               {% if service in exam.service_types.all %}checked{% endif %} id="service_{{ service.id }}">
+                                                        <label class="form-check-label" for="service_{{ service.id }}">{{ service.name }}</label>
+                                                      </div>
+                                                    {% endfor %}
+                                                  </div>
+                                                </div>
+                                      
+                                                <!-- Payment Details -->
+                                                <div class="form-floating mb-3">
+                                                  <select name="payment_method" class="form-select" id="id_payment_method">
+                                                    <option value="Cash" {% if exam.payment_set.first.method == 'Cash' %}selected{% endif %}>Cash</option>
+                                                    <option value="Gcash" {% if exam.payment_set.first.method == 'Gcash' %}selected{% endif %}>Gcash</option>
+                                                  </select>
+                                                  <label for="id_payment_method">Payment Method</label>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                  <input type="number" name="payment_amount" step="0.01" value="{{ exam.payment_set.first.amount }}" class="form-control rounded-3" id="id_payment_amount">
+                                                  <label for="id_payment_amount">Payment Amount</label>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                  <select name="payment_status" class="form-select" id="id_payment_status">
+                                                    <option value="Paid" {% if exam.payment_set.first.status == 'Paid' %}selected{% endif %}>Paid</option>
+                                                    <option value="Pending" {% if exam.payment_set.first.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                  </select>
+                                                  <label for="id_payment_status">Payment Status</label>
+                                                </div>
+                                              </div>
+                                              <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                              </div>
+                                            </form>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {% empty %}
+                                      <tr>
+                                        <td colspan="7" style="text-align: center;">No examination records found.</td>
+                                      </tr>
+                                      {% endfor %}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <a class="btn btn-success">Edit Patient</a>
+                        <a href="{% url 'edit_patient' patient.id %}" class="btn btn-success">Edit Patient</a>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
@@ -98,5 +280,72 @@
         
         {% endfor %}
     </div>
-</div>
+</div>                              
+<script>
+// Open the modal
+function openModal(examId) {
+    var modal = new bootstrap.Modal(document.getElementById('uploadModal-' + examId));
+    modal.show();
+}
+function openEditModal(examId) {
+    var modal = new bootstrap.Modal(document.getElementById('editModal-' + examId));
+    modal.show();
+}
+function openCameraModal(examId, isChange) {
+// Set the modal title dynamically
+const modalTitle = isChange ? "Change Examination Result" : "Upload Examination Result Image";
+const modalLabel = document.getElementById(`cameraModalLabel-${examId}`);
+modalLabel.innerText = modalTitle;
+                              
+// Initialize and show the modal
+const modal = new bootstrap.Modal(document.getElementById(`cameraModal-${examId}`));
+modal.show();
+                              
+// Select elements within the current modal context
+const video = document.getElementById(`video-${examId}`);
+const canvas = document.getElementById(`canvas-${examId}`);
+const captureButton = document.getElementById(`captureButton-${examId}`);
+const resultInput = document.getElementById(`resultInput-${examId}`);
+const uploadForm = document.getElementById(`uploadForm-${examId}`);
+                              
+// Start the webcam stream
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then((stream) => {
+    video.srcObject = stream;
+    })
+    .catch((err) => {
+    console.error("Error accessing camera:", err);
+    alert("Unable to access the camera. Please check permissions.");
+    });
+                              
+// Capture button logic
+captureButton.onclick = () => {
+    // Draw the video frame to the canvas
+    canvas.width = video.videoWidth || 640; // Default width
+    canvas.height = video.videoHeight || 480; // Default height
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                              
+    // Convert canvas to Base64 and assign to hidden input
+    const imageData = canvas.toDataURL("image/png");
+    resultInput.value = imageData;
+                              
+    // Show the upload form (if hidden)
+    uploadForm.style.display = "block";
+                              
+    // Stop the webcam stream when done (optional)
+    const stream = video.srcObject;
+    stream.getTracks().forEach((track) => track.stop());
+};
+}
+document.addEventListener('DOMContentLoaded', function () {
+        const selectedPatientId = "{{ selected_patient.id|default:'' }}";
+        if (selectedPatientId) {
+            const modal = document.getElementById('patientModal_' + selectedPatientId);
+            if (modal) {
+                new bootstrap.Modal(modal).show();
+            }
+        }
+    });
+</script>
 {% endblock %}

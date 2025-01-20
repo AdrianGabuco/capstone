@@ -38,7 +38,7 @@
                 <div class="section_form">
                     <h1 class="section_form_title ui heading size-headings">LOGIN TO YOUR ACCOUNT</h1>
                     <div class="section_form_fields">
-                        <form action="{% url 'employee_login' %}" method="POST">
+                        <form action="{% url 'admin_login' %}" method="POST">
                             {% csrf_token %}
                             <label class="section_form_input--username ui input gray_200 size-xs fill round">
                                 <input name="username" placeholder="USERNAME" type="text" required />
