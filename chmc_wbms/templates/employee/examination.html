@@ -28,6 +28,7 @@
         <tr>
           <!-- Actions -->
           <td>
+<<<<<<< HEAD
             <div>
             {% if exam.has_edited_document %}
               <a href="{% url 'view_document' exam.pk %}" class="btn btn-primary">View Document</a>
@@ -38,19 +39,58 @@
             {% endif %}
 
             <button type="button" class="btn btn-secondary" onclick="openModal({{ exam.pk }})" title="Edited Document">Upload Edited Document</button>
+=======
+            <div class="btn-container">
+              {% if exam.has_edited_document %}
+                <!-- View Document -->
+                <a href="{% url 'view_document' exam.pk %}" class="btnex btn-primary">
+                  <span class="material-symbols-outlined">visibility</span>
+                  <span class="btn-text">View Document</span>
+                </a>
+              {% elif exam.document %}
+                <!-- Download Document -->
+                <a href="{{ exam.document.url }}" target="_blank" class="btnex btn-primary">
+                  <span class="material-symbols-outlined">download</span>
+                  <span class="btn-text">Download Document</span>
+                </a>
+              {% else %}
+                <span class="no-document">No Document</span>
+              {% endif %}
+          
+              <!-- Upload Edited Document -->
+              <button type="button" class="btnex btn-secondary" onclick="openModal({{ exam.pk }})">
+                <span class="material-symbols-outlined">upload</span>
+                <span class="btn-text">Upload Edited Document</span>
+              </button>
+          
+              {% if exam.result_image %}
+                <!-- View Examination Result -->
+                <a href="{{ exam.result_image.url }}" target="_blank" class="btnex btn-success">
+                  <span class="material-symbols-outlined">panorama</span>
+                  <span class="btn-text">View Examination Result</span>
+                </a>
+          
+                <!-- Change Examination Result -->
+                <button type="button" class="btnex btn-warning" onclick="openCameraModal({{ exam.pk }}, true)">
+                  <span class="material-symbols-outlined">add_photo_alternate</span>
+                  <span class="btn-text">Change Examination Result</span>
+                </button>
+              {% else %}
+                <!-- Upload Examination Result -->
+                <button type="button" class="btnex btn-info" onclick="openCameraModal({{ exam.pk }}, false)">
+                  <span class="material-symbols-outlined">add_a_photo</span>
+                  <span class="btn-text">Upload Examination Result Image</span>
+                </button>
+              {% endif %}
+          
+              <!-- Edit Examination -->
+              <button type="button" class="btnex btn-primary" onclick="openEditModal({{ exam.pk }})">
+                <span class="material-symbols-outlined">edit</span>
+                <span class="btn-text">Edit Examination</span>
+              </button>
+>>>>>>> a460171308ab30d3fb520c472774acd145de0313
             </div>
-            {% if exam.result_image %}
-              <a href="{{ exam.result_image.url }}" target="_blank" class="btn btn-success">View Examination Result</a>
-              <button type="button" class="btn btn-warning" onclick="openCameraModal({{ exam.pk }}, true)">Change Examination Result</button>
-            {% else %}
-              <button type="button" class="btn btn-info" onclick="openCameraModal({{ exam.pk }}, false)">Upload Examination Result Image</button>
-            {% endif %}
-
-            <button type="button" class="btn btn-primary" onclick="openEditModal({{ exam.pk }})">
-              Edit Examination
-          </button>
           </td>
-
           <!-- Patient Details -->
           <td>{{ exam.patient.get_formatted_id }}</td>
           <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>
