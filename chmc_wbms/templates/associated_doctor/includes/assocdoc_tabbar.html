@@ -12,12 +12,6 @@
       <li class="tab-item-4 {% if request.resolver_match.url_name == 'document_results' %}active{% endif %}">
         <a href="{% url 'document_results' %}" class="tab-link">Document Results</a>
       </li>
-      <li class="tab-item-5 {% if request.resolver_match.url_name == 'associated_doctors' %}active{% endif %}">
-        <a href="{% url 'associated_doctors' %}" class="tab-link">Associated Doctors</a>
-      </li>
-      <li class="tab-item-6 {% if request.resolver_match.url_name == 'assoc_doc_readings' %}active{% endif %}">
-        <a href="{% url 'assoc_doc_readings' %}" class="tab-link">Associated Doctor's Readings</a>
-      </li>
     </ul>
   </div>
   

@@ -16,13 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, employee_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, add_examination
+from webapp.views import assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, add_examination
 from django.conf.urls.static import static
 from django.conf import settings
     
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', employee_login_view, name='employee_login'),
+    path('', user_login_view, name='user_login'),
     path('admin_login/', admin_login_view, name='admin_login'),
     path('admin_dashboard/', admin_dashboard_view, name='admin_dashboard'),
     path('manage_accounts/', manage_account_view, name='manage_accounts'),

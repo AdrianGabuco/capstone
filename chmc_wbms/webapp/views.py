@@ -50,7 +50,7 @@ def admin_login_view(request):
     return render(request, 'admin/admin_login.html')
 
 
-def employee_login_view(request):
+def user_login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
