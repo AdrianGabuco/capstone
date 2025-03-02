@@ -636,8 +636,10 @@ def verify_document(request):
                 return HttpResponse("Document not found for the provided code.")
 
             # Check if an edited document exists
-            if not examination.has_edited_document():
+            if not examination.edited_document:
                 return HttpResponse("This document does not have an edited version.")
+            if not os.path.exists(examination.edited_document.path):
+                return HttpResponse("Edited document file is missing.")
 
             # Convert the .docx document to PDF if not already converted
             try:
@@ -652,6 +654,7 @@ def verify_document(request):
             return HttpResponse(f"Error: {e}")
     else:
         return render(request, 'authenticity_checker.html')
+
     
 @csrf_exempt
 def search_patient(request):
