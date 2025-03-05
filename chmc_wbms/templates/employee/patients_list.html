@@ -8,21 +8,21 @@
 
 <div class="container my-5">
     <div class="row scrollable-row">
-        {% for patient in patients %}
-        <div class="col-md-4 mb-4">
-            <div class="card text-center shadow-sm">
-              {% if patient.image %}
-              <img class="mx-auto d-block" src="{{ patient.image.url }}" alt="Patient Image" width="100" height="100">
-              {% else %}
-              <img class="mx-auto d-block" src="/static/image/profile_ICON.png" alt="Default Profile Icon" width="100" height="100">
-              {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ patient.patient_full_name_last_name_start }}</h5>
-                    <p class="card-text text-muted">{{ patient.get_formatted_id }}</p>
-                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#patientModal{{ patient.id }}">
-                        View Details
-                    </button>
-                </div>
+      {% for patient in patients %}
+      <div class="col-md-4 mb-4">
+        <div class="card text-center shadow-sm">
+          {% if patient.image %}
+          <img class="mx-auto d-block" src="{{ patient.image.url }}" alt="Patient Image" width="100" height="100">
+          {% else %}
+          <img class="mx-auto d-block" src="/static/image/profile_ICON.png" alt="Default Profile Icon" width="100" height="100">
+          {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ patient.patient_full_name_last_name_start }}</h5>
+                <p class="card-text text-muted">{{ patient.get_formatted_id }}</p>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#patientModal{{ patient.id }}">
+                  View Details
+                </button>
+              </div>
             </div>
         </div>
 
@@ -280,6 +280,24 @@
         
         {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-end">
+      <nav>
+        <ul class="pagination">
+          {% if patients_page.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ patients_page.previous_page_number }}">Previous</a></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">Page {{ patients_page.number }} of {{ patients_page.paginator.num_pages }}</span></li>
+          {% if patients_page.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ patients_page.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ patients_page.paginator.num_pages }}">Last</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    
 </div>                              
 <script>
 // Open the modal

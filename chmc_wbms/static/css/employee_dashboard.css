@@ -35,6 +35,6 @@
 }
 
 .scrollable-row {
-    max-height: 500px; /* Adjust height as needed */
-    overflow-y: auto;
+    max-height: 520px; /* Adjust height as needed */
 }
+

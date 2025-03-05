@@ -62,3 +62,13 @@ button:hover {
 .admin-login a:hover {
     text-decoration: underline;
 }
+
+.pagination-container {
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    padding: 10px 20px;
+    z-index: 1020;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    text-align: right;
+  }
