@@ -8,7 +8,7 @@
 
 <div class="container my-5">
     <div class="row scrollable-row">
-      {% for patient in patients %}
+      {% for patient in page_obj %}
       <div class="col-md-4 mb-4">
         <div class="card text-center shadow-sm">
           {% if patient.image %}
@@ -25,7 +25,12 @@
               </div>
             </div>
         </div>
+        {% endfor %}
+      </div>
+      {% include "employee/includes/pagination.html" %}
+  </div>        
 
+  {% for patient in patients %}
         <!-- Modal -->
         <div class="modal fade" id="patientModal{{ patient.id }}" tabindex="-1" aria-labelledby="patientModalLabel{{ patient.id }}" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -277,28 +282,8 @@
                 </div>
             </div>
         </div>
-        
         {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    <div class="d-flex justify-content-end">
-      <nav>
-        <ul class="pagination">
-          {% if patients_page.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ patients_page.previous_page_number }}">Previous</a></li>
-          {% endif %}
-          <li class="page-item disabled"><span class="page-link">Page {{ patients_page.number }} of {{ patients_page.paginator.num_pages }}</span></li>
-          {% if patients_page.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ patients_page.next_page_number }}">Next</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ patients_page.paginator.num_pages }}">Last</a></li>
-          {% endif %}
-        </ul>
-      </nav>
-    </div>
-    
-</div>                              
+                      
 <script>
 // Open the modal
 function openModal(examId) {

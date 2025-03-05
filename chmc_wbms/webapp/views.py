@@ -27,6 +27,8 @@ from docx import Document
 from docx.shared import Inches
 from django.conf import  settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
+from django.core.files.storage import default_storage
 
 
 @csrf_protect
@@ -250,26 +252,32 @@ def edit_profile_view(request, account_id):
 
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_patients_list_view(request, patient_id=None):
-    patients = Patient.objects.all()
-    examinations = Examination.objects.select_related('patient', 'attending_doctor') \
-        .prefetch_related('service_types', Prefetch('payment_set')).order_by('-date_created')
-    service_types = ServiceType.objects.all()
+    # Get all patients but only fetch the current page's patients
+    patients = Patient.objects.order_by('id')
+    paginator = Paginator(patients, 12)  # 12 patients per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
-    # Handle the optional patient_id
     selected_patient = None
+    examinations = None
+
     if patient_id:
         selected_patient = get_object_or_404(Patient, id=patient_id)
+        # Fetch only examinations for the selected patient
+        examinations = Examination.objects.filter(patient=selected_patient) \
+            .select_related('attending_doctor') \
+            .prefetch_related('service_types', 'payment_set') \
+            .order_by('-date_created')
 
-    account = request.user
     context = {
-        'account': account,
-        'patients': patients,
-        'service_types': service_types,
+        'account': request.user,
+        'service_types': ServiceType.objects.all(),
+        'selected_patient': selected_patient,
         'examinations': examinations,
-        'selected_patient': selected_patient,  # Pass the specific patient if needed
+        'page_obj': page_obj,  # Use this in the template
     }
+    
     return render(request, 'employee/patients_list.html', context)
-
 
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def document_results_view(request):
@@ -540,7 +548,14 @@ def upload_edited_document(request, pk):
     if request.method == 'POST':
         form = UploadEditedDocumentForm(request.POST, request.FILES, instance=examination)
         if form.is_valid():
+            # Delete the old document if it exists
+            if examination.edited_document:
+                if default_storage.exists(examination.edited_document.name):
+                    default_storage.delete(examination.edited_document.name)
+
+            # Save the new document
             form.save()
+
             return redirect('employee_examination')
         else:
             return JsonResponse({'message': 'Failed to upload document.'}, status=400)

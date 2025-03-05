@@ -72,3 +72,13 @@ button:hover {
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
     text-align: right;
   }
+
+  .zoomable {
+    transition: transform 0.3s ease-in-out;
+    cursor: zoom-in;
+  }
+  
+  .zoomable.zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+  }
