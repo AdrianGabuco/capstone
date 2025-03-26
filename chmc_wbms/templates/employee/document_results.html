@@ -4,69 +4,120 @@
 {% block title %}Document Results{% endblock %}
 
 {% block content %}
-
 <h2>Document Results</h2>
-<body class="bg-light">
 
+<body class="bg-light">
     <div class="container my-5">
-        <div class="row">
-          <!-- Left Side: Folder List -->
-          <div class="col-md-4 border-end pe-4">
-            <h5 class="text-center fw-bold mb-4">Folders</h5>
-            <div class="row g-3">
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2024</p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h5 class="text-center fw-bold mb-4">Document Folders</h5>
+
+                {% if not selected_year and not selected_month and not selected_day %}
+                <!-- Display Year Folders Initially -->
+                <div class="row g-3">
+                    {% for year in years %}
+                        <div class="col-4 text-center">
+                            <a href="?year={{ year }}&filter=all" class="text-decoration-none">
+                                <div class="border border-primary rounded p-3">
+                                    <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
+                                    <p class="mb-0 fw-bold">{{ year }}</p>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
                 </div>
-              </div>
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2023</p>
+            
+            {% elif selected_year and not selected_month and not selected_day %}
+                <!-- Back Button to Year Selection -->
+                <a href="{% url 'document_results' %}" class="btn btn-outline-secondary mb-3">Back to Year Selection</a>
+            
+                <!-- Display Month Folders -->
+                <h5 class="text-center fw-bold mb-4">{{ selected_year }} Documents</h5>
+                <div class="d-flex justify-content-center mb-3">
+                    <a href="?year={{ selected_year }}&filter=all" class="btn btn-sm btn-outline-primary mx-1">All</a>
+                    <a href="?year={{ selected_year }}&filter=month" class="btn btn-sm btn-outline-primary mx-1">Per Month</a>
                 </div>
-              </div>
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2022</p>
+            
+                {% if selected_filter == "all" %}
+                    <ul class="list-group list-group-flush mt-3">
+                        {% for document in documents %}
+                            {% if document.edited_document %}
+                                <a href="{{ document.edited_document.url }}">View Document</a>
+                            {% else %}
+                                No Document Uploaded
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="row g-3">
+                        {% for month, has_docs in months.items %}
+                            {% if has_docs %}
+                                <div class="col-4 text-center">
+                                    <a href="?year={{ selected_year }}&month={{ month }}&filter=day" class="text-decoration-none">
+                                        <div class="border border-primary rounded p-3">
+                                            <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
+                                            <p class="mb-0 fw-bold">{{ month }}</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            
+            {% elif selected_month and not selected_day %}
+                <!-- Back Button to Month Selection -->
+                <a href="?year={{ selected_year }}" class="btn btn-outline-secondary mb-3">Back to {{ selected_year }} Folders</a>
+            
+                <!-- Display Day Folders -->
+                <h5 class="text-center fw-bold mb-4">{{ selected_year }} - {{ selected_month }}</h5>
+                <div class="d-flex justify-content-center mb-3">
+                    <a href="?year={{ selected_year }}&month={{ selected_month }}&filter=all" class="btn btn-sm btn-outline-primary mx-1">All</a>
+                    <a href="?year={{ selected_year }}&month={{ selected_month }}&filter=day" class="btn btn-sm btn-outline-primary mx-1">Per Day</a>
                 </div>
-              </div>
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2021</p>
-                </div>
-              </div>
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2020</p>
-                </div>
-              </div>
-              <div class="col-4 text-center">
-                <div class="border border-primary rounded p-3">
-                  <img src="{% static 'image/folder-icon.png' %}" class="mb-2" alt="Folder Icon">
-                  <p class="mb-0 fw-bold">2019</p>
-                </div>
-              </div>
+            
+                {% if selected_filter == "all" %}
+                    <ul class="list-group list-group-flush mt-3">
+                      {% for document in documents %}
+                        {% if document.edited_document %}
+                          <a href="{{ document.edited_document.url }}">View Document</a>
+                        {% else %}
+                          No Document Uploaded
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="row g-3">
+                        {% for day, has_docs in days.items %}
+                            {% if has_docs %}
+                                <div class="col-3 text-center">
+                                    <a href="?year={{ selected_year }}&month={{ selected_month }}&day={{ day }}" class="text-decoration-none">
+                                        <div class="border border-success rounded p-3">
+                                            <p class="mb-0 fw-bold">{{ day }}</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            
+            {% elif selected_day %}
+                <!-- Back Button to Day Selection -->
+                <a href="?year={{ selected_year }}&month={{ selected_month }}" class="btn btn-outline-secondary mb-3">Back to {{ selected_month }} Folders</a>
+            
+                <!-- Display Documents After Selecting a Day -->
+                <h5 class="text-center fw-bold mb-4">{{ selected_year }} - {{ selected_month }} - {{ selected_day }}</h5>
+                <ul class="list-group list-group-flush mt-3">
+                    {% for doc in documents %}
+                        <li class="list-group-item">
+                            <a href="{{ doc.edited_document.url }}" target="_blank">{{ doc.edited_document.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            
+            {% endif %}
             </div>
-          </div>
-    
-          <!-- Right Side: Document List -->
-          <div class="col-md-8 ps-4">
-            <h5 class="text-center fw-bold mb-4">2024 Documents</h5>
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item">AD4P021_2024-01-25.DOCX</li>
-              <li class="list-group-item">AD1P053_2024-06-28.DOCX</li>
-              <li class="list-group-item">AD1P001_2024-05-14.DOCX</li>
-              <li class="list-group-item">AD2P061_2024-05-11.DOCX</li>
-              <li class="list-group-item">AD1P055_2024-05-05.DOCX</li>
-              <li class="list-group-item">ADIP0015_2024-04-02.DOCX</li>
-              <li class="list-group-item">AD1P0001_2024-03-30.DOCX</li>
-            </ul>
-          </div>
         </div>
     </div>
-
 {% endblock %}

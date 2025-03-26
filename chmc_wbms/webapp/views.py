@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count, Q, Prefetch
 from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
-from django.utils import timezone
+from django.utils.timezone import now
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
@@ -281,9 +281,63 @@ def employee_patients_list_view(request, patient_id=None):
 
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def document_results_view(request):
-       account = request.user
-       context = {'account': account}
-       return render(request, 'employee/document_results.html', context)
+    account = request.user
+
+    # Get all years with edited documents, in descending order
+    years = Examination.objects.filter(edited_document__isnull=False).dates('date_created', 'year', order='DESC')
+
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    selected_day = request.GET.get('day')
+    selected_filter = request.GET.get('filter', 'all')  # Default to 'all'
+
+    documents = []
+    months = {}
+    days = {}
+
+    # If a year is selected, get documents for that year
+    if selected_year:
+        year_int = int(selected_year)
+        documents = Examination.objects.filter(date_created__year=year_int, edited_document__isnull=False)
+
+        # Generate months dictionary (only include months that have documents)
+        for i in range(1, 13):
+            has_docs = documents.filter(date_created__month=i).exists()
+            if has_docs:
+                months[now().replace(month=i).strftime("%B")] = has_docs
+
+        # If month filter is applied and a month is selected, get documents for that month
+        if selected_month:
+            month_int = list(months.keys()).index(selected_month) + 1
+            documents = documents.filter(date_created__month=month_int)
+
+            # Generate days dictionary (only include days that have documents)
+            for i in range(1, 32):  # Max days in any month
+                try:
+                    date_check = datetime(year_int, month_int, i)
+                    has_docs = documents.filter(date_created__day=i).exists()
+                    if has_docs:
+                        days[i] = has_docs
+                except ValueError:
+                    # Skip invalid days (like 30th or 31st in months without them)
+                    continue
+
+        # If day filter is applied and a day is selected, filter for documents of that day
+        if selected_day:
+            documents = documents.filter(date_created__day=int(selected_day))
+
+    context = {
+        'years': [y.year for y in years],  # List of available years
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_day': selected_day,
+        'selected_filter': selected_filter,
+        'months': months if selected_year else {},
+        'days': days if selected_month else {},
+        'documents': documents,  # Display all or filtered documents based on user selections
+        'account': account,
+    }
+    return render(request, 'employee/document_results.html', context)
 
 
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
