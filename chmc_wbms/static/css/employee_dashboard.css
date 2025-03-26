@@ -34,7 +34,24 @@
     padding-top: 10px; /* Add spacing for password fields */
 }
 
-.scrollable-row {
-    max-height: 520px; /* Adjust height as needed */
+.scrollable-container1 {
+    max-height: 500px; /* Set a maximum height for the scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: #888 #f1f1f1; /* For Firefox */
 }
-
+  
+  .scrollable-container1::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  .row {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping of items */
+    gap: 16px; /* Add spacing between items */
+  }
+  
+  .col-md-4 {
+    flex: 0 0 calc(33.33% - 16px); /* 3 items per row with spacing */
+    max-width: calc(33.33% - 16px); /* Ensure 3 items fit per row */
+  }
