@@ -884,7 +884,7 @@ h4 a {
 }
 
 .modal-content.three {
-    height: 700px; /* Set your desired height */
+    height: 800px; /* Set your desired height */
     max-height: none; /* Ensure responsiveness */
     overflow: visible;
 }
