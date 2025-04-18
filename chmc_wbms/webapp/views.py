@@ -3,6 +3,7 @@ import os
 import hashlib
 import pythoncom
 import json
+import calendar
 from win32com.client import Dispatch
 from io import BytesIO
 from PIL import Image
@@ -14,7 +15,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
-from django.db.models import Sum, Count, Q, Prefetch
+from django.db.models import Sum, Count, Q, Prefetch, CharField
 from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
 from django.utils.timezone import now
 from django.utils.crypto import get_random_string
@@ -29,7 +30,8 @@ from django.conf import  settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
-
+from urllib.parse import urlencode
+from django.db.models.functions import Cast
 
 @csrf_protect
 def admin_login_view(request):
@@ -249,6 +251,25 @@ def edit_profile_view(request, account_id):
     
     return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
 
+def search_patients_list(request):
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'patients': []})
+
+    patients = Patient.objects.filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(middle_name__icontains=query) |
+        Q(id__icontains=query.replace("PID-", ""))
+    ).order_by('last_name', 'first_name')[:10]
+
+    results = [{
+        'id': patient.id,
+        'text': f"{patient.patient_full_name_last_name_start()} ({patient.get_formatted_id()})",
+        'formatted_id': patient.get_formatted_id()
+    } for patient in patients]
+
+    return JsonResponse({'patients': results})
 
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_patients_list_view(request, patient_id=None):
@@ -257,9 +278,18 @@ def employee_patients_list_view(request, patient_id=None):
     paginator = Paginator(patients, 12)  # 12 patients per page
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    search_query = request.GET.get('search', '').strip()
 
     selected_patient = None
     examinations = None
+
+    if search_query:
+        patients = patients.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(middle_name__icontains=search_query) |
+            Q(id__icontains=search_query.replace("PID-", ""))
+        )
 
     if patient_id:
         selected_patient = get_object_or_404(Patient, id=patient_id)
@@ -275,6 +305,7 @@ def employee_patients_list_view(request, patient_id=None):
         'selected_patient': selected_patient,
         'examinations': examinations,
         'page_obj': page_obj,  # Use this in the template
+        'search_query' : search_query,
     }
     
     return render(request, 'employee/patients_list.html', context)
@@ -282,60 +313,84 @@ def employee_patients_list_view(request, patient_id=None):
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def document_results_view(request):
     account = request.user
-
-    # Get all years with edited documents, in descending order
+    search_query = request.GET.get('search', '').strip()
+    
+    examinations = Examination.objects.all().order_by('-date_created')
     years = Examination.objects.filter(edited_document__isnull=False).dates('date_created', 'year', order='DESC')
 
     selected_year = request.GET.get('year')
     selected_month = request.GET.get('month')
     selected_day = request.GET.get('day')
-    selected_filter = request.GET.get('filter', 'all')  # Default to 'all'
+    selected_filter = request.GET.get('filter', 'all')
 
-    documents = []
+    documents = Examination.objects.filter(edited_document__isnull=False)
     months = {}
     days = {}
+    page_obj = None
 
-    # If a year is selected, get documents for that year
+    # Search functionality (filters by filename, patient, or doctor)
+    if search_query:
+        documents = [
+            doc for doc in Examination.objects.all() 
+            if doc.edited_document and search_query.lower() in doc.filename.lower()
+        ]
+        # If it's an AJAX/HTMX request, return only search results
+        if request.headers.get('HX-Request') == 'true':
+            paginator = Paginator(documents, 10)
+            page_number = request.GET.get("page", 1)
+            page_obj = paginator.get_page(page_number)
+            return render(request, 'employee/partials/search_results.html', {
+                'documents': page_obj,
+                'search_query': search_query,
+            })
+
+    # Year/Month/Day filtering
     if selected_year:
         year_int = int(selected_year)
-        documents = Examination.objects.filter(date_created__year=year_int, edited_document__isnull=False)
+        documents = documents.filter(date_created__year=year_int)
+        
+        # Only show months that have documents
+        months = {
+            calendar.month_name[i]: documents.filter(date_created__month=i).exists()
+            for i in range(1, 13) if documents.filter(date_created__month=i).exists()
+        }
 
-        # Generate months dictionary (only include months that have documents)
-        for i in range(1, 13):
-            has_docs = documents.filter(date_created__month=i).exists()
-            if has_docs:
-                months[now().replace(month=i).strftime("%B")] = has_docs
-
-        # If month filter is applied and a month is selected, get documents for that month
         if selected_month:
-            month_int = list(months.keys()).index(selected_month) + 1
+            month_int = next(i for i, m in enumerate(calendar.month_name) if m == selected_month)
             documents = documents.filter(date_created__month=month_int)
+            
+            # Only show days that have documents
+            days_in_month = documents.dates('date_created', 'day')
+            days = {day.day: True for day in days_in_month}
 
-            # Generate days dictionary (only include days that have documents)
-            for i in range(1, 32):  # Max days in any month
-                try:
-                    date_check = datetime(year_int, month_int, i)
-                    has_docs = documents.filter(date_created__day=i).exists()
-                    if has_docs:
-                        days[i] = has_docs
-                except ValueError:
-                    # Skip invalid days (like 30th or 31st in months without them)
-                    continue
+            if selected_day:
+                documents = documents.filter(date_created__day=int(selected_day))
 
-        # If day filter is applied and a day is selected, filter for documents of that day
-        if selected_day:
-            documents = documents.filter(date_created__day=int(selected_day))
+    # Pagination
+    paginator = Paginator(documents, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Base query for pagination links (excludes 'page' param)
+    querydict = request.GET.copy()
+    if 'page' in querydict:
+        querydict.pop('page')
+    base_query = urlencode(querydict)
 
     context = {
-        'years': [y.year for y in years],  # List of available years
+        'years': [y.year for y in years],
         'selected_year': selected_year,
         'selected_month': selected_month,
         'selected_day': selected_day,
         'selected_filter': selected_filter,
-        'months': months if selected_year else {},
-        'days': days if selected_month else {},
-        'documents': documents,  # Display all or filtered documents based on user selections
+        'months': months,
+        'days': days,
+        'documents': documents,
+        'page_obj': page_obj,
         'account': account,
+        'base_query': base_query,
+        'search_query': search_query,
+        'examinations' : examinations,
     }
     return render(request, 'employee/document_results.html', context)
 
@@ -386,12 +441,38 @@ def employee_examination_view(request):
         .prefetch_related('service_types', Prefetch('payment_set'))
         .order_by('-date_created')  # Order by latest examination first
     )
+     
+    search_query = request.GET.get('search', '').strip()
+    date_filter = request.GET.get('date')
+    
+    # Apply filters first
+    if search_query:
+        examinations = examinations.filter(
+            Q(patient__first_name__icontains=search_query) |
+            Q(patient__last_name__icontains=search_query) |
+            Q(patient__middle_name__icontains=search_query) |
+            Q(patient__id__icontains=search_query)  # Make sure this field is searchable
+        )
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            examinations = examinations.filter(date_created__date=filter_date)
+        except ValueError:
+            pass
     service_types = ServiceType.objects.all()
 
+    paginator = Paginator(examinations, 10)  # or however many per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
     context = {
         'account' : account,
-        'examinations': examinations,
-        'service_types': service_types
+        'examinations': page_obj,
+        'service_types': service_types,
+        'page_obj' : page_obj,
+        'search_query' : search_query,
+        'date_filter' : date_filter,
     }
     return render(request, 'employee/examination.html', context)
 

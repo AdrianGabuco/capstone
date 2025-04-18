@@ -5,8 +5,29 @@
 
 {% block content %}
 <h2>Document Results</h2>
+<form method="get" class="d-flex mb-4">
+    <input 
+        type="text" 
+        name="search" 
+        id="searchInput"
+        class="form-control me-2" 
+        placeholder="Search documents by name" 
+        value="{{ request.GET.search }}"
+        hx-get="{% url 'document_results' %}"
+        hx-trigger="keyup changed delay:300ms"
+        hx-target="#searchResults"
+        hx-swap="innerHTML"
+    >
+    <button class="btn btn-primary" type="submit">
+        <i class="bi bi-search"></i> Search
+    </button>
+    {% if request.GET.search %}
+        <a href="{% url 'document_results' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+    {% endif %}
+</form>
 
 <body class="bg-light">
+    {% if not request.GET.search %}
     <div class="container my-5">
         <div class="row justify-content-center">
             <div class="col-md-10">
@@ -41,14 +62,87 @@
                         text-overflow: ellipsis;
                         max-width: 300px;
                     }
+                    #searchResults {
+                        position: absolute;
+                        z-index: 1000;
+                        width: calc(100% - 120px);
+                        max-height: 400px;
+                        overflow-y: auto;
+                        background: white;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                        display: none;
+                    }
+                    .search-result-item {
+                        padding: 10px;
+                        border-bottom: 1px solid #eee;
+                        cursor: pointer;
+                    }
+                    .search-result-item:hover {
+                        background-color: #f8f9fa;
+                    }
                 </style>
 
-                {% if not selected_year and not selected_month and not selected_day %}
+                <!-- Search Results Dropdown -->
+                <div id="searchResults">
+                    {% if request.GET.search %}
+                        {% include 'employee/partials/search_results.html' %}
+                    {% endif %}
+                </div>
+                
+
+                {% if request.GET.search %}
+                    <!-- Display search results in main content area -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Search Results for "{{ request.GET.search }}"</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for document in page_obj %}
+                                    {% if document.edited_document %}
+                                        <div class="list-group-item document-card">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
+                                                    <div>
+                                                        <span class="filename">{{ document.edited_document.name|cut:"examination_documents/edited/" }}</span>
+                                                        <small class="text-muted d-block">{{ document.created_at|date:"F j, Y" }}</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'view_document' document.id %}" class="btn btn-sm btn-outline-primary me-2" title="View Document">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                    <a href="{{ document.edited_document.url }}" class="btn btn-sm btn-outline-success" download>
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                    <a href="?year={{ document.created_at|date:'Y' }}&month={{ document.created_at|date:'F' }}&day={{ document.created_at|date:'j' }}" 
+                                                       class="btn btn-sm btn-outline-secondary ms-2" title="Go to Folder">
+                                                        <i class="bi bi-folder"></i> Folder
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <div class="text-center py-4 text-muted">
+                                        No documents found matching your search.
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if page_obj %}
+                            {% include "employee/includes/pagination.html" %}
+                        {% endif %}
+                    </div>
+                {% elif not selected_year and not selected_month and not selected_day %}
                 <!-- Display Year Folders Initially -->
                 <div class="row g-3">
                     {% for year in years %}
                         <div class="col-4 text-center">
-                            <a href="?year={{ year }}&filter=all" class="text-decoration-none">
+                            <a href="?year={{ year }}&filter=month" class="text-decoration-none">
                                 <div class="border border-primary rounded p-3 folder-card">
                                     <img src="{% static 'image/folder-icon.png' %}" class="folder-icon mb-2" alt="Folder Icon">
                                     <p class="mb-0 fw-bold folder-label">{{ year }}</p>
@@ -78,74 +172,47 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="list-group list-group-flush">
-                                {% for document in documents %}
-                                <div class="list-group-item document-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
-                                            <div>
-                                                <span class="filename">{{ document.edited_document.name|default:"No Document Uploaded" }}</span>
-                                                <small class="text-muted d-block">{{ document.created_at|date:"F j, Y" }}</small>
+                                {% for document in page_obj %}
+                                    {% if document.edited_document %}
+                                        <div class="list-group-item document-card">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
+                                                    <div>
+                                                        <span class="filename">{{ document.edited_document.name|cut:"examination_documents/edited/" }}</span>
+                                                        <small class="text-muted d-block">{{ document.created_at|date:"F j, Y" }}</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'view_document' document.id %}" class="btn btn-sm btn-outline-primary me-2" title="View Document">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                    <a href="{{ document.edited_document.url }}" class="btn btn-sm btn-outline-success" download>
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                    <a href="?year={{ document.created_at|date:'Y' }}&month={{ document.created_at|date:'F' }}&day={{ document.created_at|date:'j' }}" 
+                                                       class="btn btn-sm btn-outline-secondary ms-2" title="Go to Folder">
+                                                        <i class="bi bi-folder"></i> Folder
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            {% if document.edited_document %}
-                                            <a href="{{ document.edited_document.url }}" class="btn btn-sm btn-outline-primary" download>
-                                                <i class="bi bi-download"></i> Download
-                                            </a>
-                                            {% endif %}
-                                        </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <div class="text-center py-4 text-muted">
+                                        No documents found.
                                     </div>
-                                </div>
-                                {% endfor %}
+                                {% endfor %}                            
                             </div>
                         </div>
-                        {% if documents.paginator.num_pages > 1 %}
-                        <div class="card-footer bg-white">
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination pagination-sm justify-content-center mb-0">
-                                    {% if documents.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&filter=all&page=1" aria-label="First">
-                                            <span aria-hidden="true">&laquo;&laquo;</span>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&filter=all&page={{ documents.previous_page_number }}" aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </a>
-                                    </li>
-                                    {% endif %}
-                                    
-                                    {% for num in documents.paginator.page_range %}
-                                        {% if documents.number == num %}
-                                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
-                                        {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
-                                        <li class="page-item"><a class="page-link" href="?year={{ selected_year }}&filter=all&page={{ num }}">{{ num }}</a></li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if documents.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&filter=all&page={{ documents.next_page_number }}" aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&filter=all&page={{ documents.paginator.num_pages }}" aria-label="Last">
-                                            <span aria-hidden="true">&raquo;&raquo;</span>
-                                        </a>
-                                    </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        </div>
+                        {% if page_obj %}
+                            {% include "employee/includes/pagination.html" %}
                         {% endif %}
                     </div>
                 {% else %}
                     <div class="row g-3">
                         {% for month, has_docs in months.items %}
-                            {% if has_docs %}
+                            {% if has_docs or month == selected_month %}
                                 <div class="col-4 text-center">
                                     <a href="?year={{ selected_year }}&month={{ month }}&filter=day" class="text-decoration-none">
                                         <div class="border border-primary rounded p-3 folder-card">
@@ -161,12 +228,12 @@
             
                 {% elif selected_month and not selected_day %}
                 <!-- Back Button to Month Selection -->
-                <a href="?year={{ selected_year }}" class="btn btn-outline-secondary mb-3">
+                <a href="?year={{ selected_year }}&filter=month" class="btn btn-outline-secondary mb-3">
                     <i class="bi bi-arrow-left"></i> Back to {{ selected_year }} Folders
                 </a>
             
                 <!-- Display Day Folders -->
-                <h5 class="text-center fw-bold mb-4">{{ selected_year }} - {{ selected_month }}</h5>
+                <h5 class="text-center fw-bold mb-4">{{ selected_year }} - {{ selected_month }} Documents</h5>
                 <div class="d-flex justify-content-center mb-3">
                     <a href="?year={{ selected_year }}&month={{ selected_month }}&filter=all" class="btn btn-sm btn-outline-primary mx-1">All Documents</a>
                     <a href="?year={{ selected_year }}&month={{ selected_month }}&filter=day" class="btn btn-sm btn-outline-primary mx-1">View by Day</a>
@@ -179,68 +246,41 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="list-group list-group-flush">
-                                {% for document in documents %}
-                                <div class="list-group-item document-card">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
-                                            <div>
-                                                <span class="filename">{{ document.edited_document.name|default:"No Document Uploaded" }}</span>
-                                                <small class="text-muted d-block">{{ document.created_at|date:"F j, Y" }}</small>
+                                {% for document in page_obj %}
+                                    {% if document.edited_document %}
+                                        <div class="list-group-item document-card">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
+                                                    <div>
+                                                        <span class="filename">{{ document.edited_document.name|cut:"examination_documents/edited/" }}</span>
+                                                        <small class="text-muted d-block">{{ document.created_at|date:"F j, Y" }}</small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'view_document' document.id %}" class="btn btn-sm btn-outline-primary me-2" title="View Document">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                    <a href="{{ document.edited_document.url }}" class="btn btn-sm btn-outline-success" download>
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                    <a href="?year={{ document.created_at|date:'Y' }}&month={{ document.created_at|date:'F' }}&day={{ document.created_at|date:'j' }}" 
+                                                       class="btn btn-sm btn-outline-secondary ms-2" title="Go to Folder">
+                                                        <i class="bi bi-folder"></i> Folder
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            {% if document.edited_document %}
-                                            <a href="{{ document.edited_document.url }}" class="btn btn-sm btn-outline-primary" download>
-                                                <i class="bi bi-download"></i> Download
-                                            </a>
-                                            {% endif %}
-                                        </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <div class="text-center py-4 text-muted">
+                                        No documents found.
                                     </div>
-                                </div>
                                 {% endfor %}
                             </div>
                         </div>
-                        {% if documents.paginator.num_pages > 1 %}
-                        <div class="card-footer bg-white">
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination pagination-sm justify-content-center mb-0">
-                                    {% if documents.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&month={{ selected_month }}&filter=all&page=1" aria-label="First">
-                                            <span aria-hidden="true">&laquo;&laquo;</span>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&month={{ selected_month }}&filter=all&page={{ documents.previous_page_number }}" aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </a>
-                                    </li>
-                                    {% endif %}
-                                    
-                                    {% for num in documents.paginator.page_range %}
-                                        {% if documents.number == num %}
-                                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
-                                        {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
-                                        <li class="page-item"><a class="page-link" href="?year={{ selected_year }}&month={{ selected_month }}&filter=all&page={{ num }}">{{ num }}</a></li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if documents.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&month={{ selected_month }}&filter=all&page={{ documents.next_page_number }}" aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?year={{ selected_year }}&month={{ selected_month }}&filter=all&page={{ documents.paginator.num_pages }}" aria-label="Last">
-                                            <span aria-hidden="true">&raquo;&raquo;</span>
-                                        </a>
-                                    </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        </div>
+                        {% if page_obj %}
+                            {% include "employee/includes/pagination.html" %}
                         {% endif %}
                     </div>
                 {% else %}
@@ -262,7 +302,7 @@
             
                 {% elif selected_day %}
                 <!-- Back Button to Day Selection -->
-                <a href="?year={{ selected_year }}&month={{ selected_month }}" class="btn btn-outline-secondary mb-3">
+                <a href="?year={{ selected_year }}&month={{ selected_month }}&filter=day" class="btn btn-outline-secondary mb-3">
                     <i class="bi bi-arrow-left"></i> Back to {{ selected_month }} Folders
                 </a>
             
@@ -274,31 +314,33 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            {% for doc in documents %}
-                            <div class="list-group-item document-card">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
-                                        <div>
-                                            <span class="filename">{{ doc.edited_document.name }}</span>
-                                            <small class="text-muted d-block">{{ doc.created_at|date:"g:i A" }}</small>
+                            {% for doc in page_obj %}
+                                {% if doc.edited_document %}
+                                    <div class="list-group-item document-card">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-file-earmark-text fs-4 text-primary me-3"></i>
+                                                <div>
+                                                    <span class="filename">{{ doc.edited_document.name|cut:"examination_documents/edited/" }}</span>
+                                                    <small class="text-muted d-block">{{ doc.created_at|date:"g:i A" }}</small>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <a href="{% url 'view_document' doc.id %}" class="btn btn-sm btn-outline-primary me-2" title="View Document">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <a href="{{ doc.edited_document.url }}" class="btn btn-sm btn-outline-success" download>
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <a href="{{ doc.edited_document.url }}" class="btn btn-sm btn-outline-primary me-2" target="_blank">
-                                            <i class="bi bi-eye"></i> View
-                                        </a>
-                                        <a href="{{ doc.edited_document.url }}" class="btn btn-sm btn-outline-success" download>
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                                {% endif %}
                             {% empty %}
-                            <div class="list-group-item text-center py-4 text-muted">
-                                No documents found for this day
-                            </div>
-                            {% endfor %}
+                                <div class="list-group-item text-center py-4 text-muted">
+                                    No documents found for this day
+                                </div>
+                            {% endfor %}                            
                         </div>
                     </div>
                 </div>
@@ -306,5 +348,42 @@
             </div>
         </div>
     </div>
+    {% endif %}
+
+    <script>
+        // Show/hide search results dropdown
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim() !== '') {
+                searchResults.style.display = 'block';
+            }
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                searchResults.style.display = 'none';
+            }, 200);
+        });
+        
+        searchInput.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                searchResults.style.display = 'block';
+            } else {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+// When clicking a search result, prevent default and navigate to folder
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.search-result-item')) {
+                e.preventDefault();
+                const folderUrl = e.target.closest('.search-result-item').getAttribute('data-folder-url');
+                window.location.href = folderUrl;
+            }
+        });
+
+    </script>
 </body>
 {% endblock %}

@@ -3,7 +3,7 @@ from .models import CustomUser, Appointment, ServiceType, AppointmentServiceType
 
 
 class ExaminationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'patient', 'attending_doctor', 'date_created', 'get_unique_code', 'get_raw_unique_code')
+    list_display = ('id', 'patient', 'attending_doctor', 'date_created', 'get_unique_code', 'get_raw_unique_code', 'edited_document')
     readonly_fields = ('get_unique_code', 'get_raw_unique_code')
     search_fields = ('get_unique_code', 'get_raw_unique_code')
 

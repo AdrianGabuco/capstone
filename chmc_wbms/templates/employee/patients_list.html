@@ -5,8 +5,50 @@
 {% block content %}
 {% load static %}
 <h2>Patients List</h2>
+<!-- Add this search form -->
+<form method="get" class="mb-4">
+  <div class="mb-4 position-relative">
+    <div class="input-group">
+        <input type="text" 
+               id="patientSearch" 
+               class="form-control" 
+               placeholder="Search patients (name or PID)..."
+               autocomplete="off">
+        <button class="btn btn-primary" type="button" id="searchButton">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+    <div id="searchResults" class="list-group mt-1 position-absolute w-100" style="display: none; z-index: 1000;"></div>
+</div>
+</form>
+<style>
+  #searchResults {
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      z-index: 1060; /* Higher than Bootstrap's modal backdrop (1050) */
+  }
+  
+  .modal {
+      z-index: 1070; /* Higher than search results */
+  }
+  
+  #searchResults a {
+      cursor: pointer;
+      transition: background-color 0.2s;
+  }
+  
+  #searchResults a:hover {
+      background-color: #f8f9fa;
+  }
+  </style>
 
-<div class="container my-5">
+
+
+<div class="container my-5" id="patients-container">
   <div class="scrollable-container1">
     <div class="row">
       {% for patient in page_obj %}
@@ -294,6 +336,7 @@
   {% endfor %}
 {% endfor %}
 
+
 <script>
 // Open the modal
 function openModal(examId) {
@@ -353,5 +396,88 @@ function openCameraModal(examId, isChange) {
         stream.getTracks().forEach((track) => track.stop());
     };
 }
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('patientSearch');
+    const searchResults = document.getElementById('searchResults');
+    let debounceTimer;
+    let currentModals = {}; // Track initialized modals
+
+    // Initialize all existing modals on page load
+    document.querySelectorAll('.modal').forEach(modal => {
+        currentModals[modal.id] = new bootstrap.Modal(modal);
+    });
+
+    // Live search with debounce
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch(`/search-patients/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    searchResults.innerHTML = '';
+                    if (data.patients.length > 0) {
+                        data.patients.forEach(patient => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.innerHTML = patient.text;
+                            item.dataset.patientId = patient.id;
+                            
+                            // Single click handler
+                            item.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const modalId = `patientModal${patient.id}`;
+                                
+                                // Initialize modal if not already done
+                                if (!currentModals[modalId]) {
+                                    const modalElement = document.getElementById(modalId);
+                                    if (modalElement) {
+                                        currentModals[modalId] = new bootstrap.Modal(modalElement);
+                                    }
+                                }
+                                
+                                // Show the modal
+                                if (currentModals[modalId]) {
+                                    currentModals[modalId].show();
+                                    searchResults.style.display = 'none';
+                                    searchInput.value = patient.text;
+                                }
+                            });
+                            
+                            searchResults.appendChild(item);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.style.display = 'none';
+                    }
+                });
+        }, 300);
+    });
+
+    // Close search results when clicking elsewhere
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // Handle Enter key
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstResult = searchResults.querySelector('a');
+            if (firstResult) {
+                firstResult.click();
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

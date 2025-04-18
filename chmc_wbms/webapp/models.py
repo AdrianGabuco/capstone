@@ -1,4 +1,5 @@
 import hashlib
+import os
 import base64
 from django.db import models
 from django.utils import timezone
@@ -194,6 +195,11 @@ class Examination(models.Model):
         raw_code = f"{file_number}-{patient_full_name}-{doctor_full_name}"
         sha_input = f"{salt}{raw_code}{pepper}".encode('utf-8')
         return hashlib.sha256(sha_input).hexdigest()
+    
+    @property
+    def filename(self):
+        return os.path.basename(self.edited_document.name) if self.edited_document else ""
+
     
 class Payment(models.Model):
     PAYMENT_METHODS = [
