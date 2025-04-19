@@ -3,50 +3,58 @@
 {% block title %}Examination{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Examination</h2>
-  <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">Add New Examination</a>
-</div>
-
-<!-- Search and Date Filter Section -->
-<div class="card mb-4">
-  <div class="card-body">
-    <form method="get" id="filterForm">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <div class="input-group">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+  <div class="d-flex align-items-center mb-2 mb-md-0 gap-4">
+    <h2 class="mb-0 me-3">Examination</h2>
+  </div>
+  <div class="fit_right d-flex align-items-center gap-3">
+    <div class="searchdoc border border-primary rounded-3 bg-white">
+      <div class="card-body1">
+        <form method="get" id="filterForm" class="d-flex align-items-center gap-2">
+          <!-- Search Input -->
+          <div class="input-group input-group-sm" style="width: 180px;">
             <input type="text" 
                    name="search" 
-                   class="form-control" 
-                   placeholder="Search by patient name or ID..."
-                   value="{{ search_query }}">
-            <button class="btn btn-primary" type="submit">
-              <i class="bi bi-search"></i> Search
-            </button>
+                   class="form-control border-primary" 
+                   placeholder="Search..."
+                   value="{{ search_query }}"
+                   style="border-radius: 0.25rem 0 0 0.25rem;">
             {% if search_query %}
-              <a href="?{% if date_filter %}date={{ date_filter }}{% endif %}" class="btn btn-outline-secondary">Clear</a>
+              <a href="?{% if date_filter %}date={{ date_filter }}{% endif %}" 
+                 class="btn border-start-0 btn-sm"
+                 style="border-radius: 0 0.25rem 0.25rem 0;">
+                <i class="bi bi-x"></i>
+              </a>
             {% endif %}
           </div>
-        </div>
-        <div class="col-md-6">
-          <div class="input-group">
+          
+          <!-- Date Filter -->
+          <div class="input-group input-group-sm" style="width: 150px;">
             <input type="date" 
                    name="date" 
-                   class="form-control" 
-                   value="{{ date_filter }}">
-            <button class="btn btn-primary" type="submit">
-              <i class="bi bi-filter"></i> Filter
-            </button>
+                   class="form-control border-primary" 
+                   value="{{ date_filter }}"
+                   style="border-radius: 0.25rem 0 0 0.25rem;">
             {% if date_filter %}
-              <a href="?{% if search_query %}search={{ search_query }}{% endif %}" class="btn btn-outline-secondary">Clear</a>
+              <a href="?{% if search_query %}search={{ search_query }}{% endif %}" 
+                 class="btn border-start-0 btn-sm"
+                 style="border-radius: 0 0.25rem 0.25rem 0;">
+                <i class="bi bi-x"></i>
+              </a>
             {% endif %}
           </div>
-        </div>
+          
+          <!-- Submit Button -->
+          <button class="btn btn-primary btn-sm" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+        </form>
       </div>
-    </form>
+    </div>
+  
+    <a href="{% url 'add_examination' %}" class="btn btn-outline-primary">Add New Examination</a>
   </div>
 </div>
-
 
 <div class="container mb-4">
   <div class="table-responsive" style="max-height: 569px; position: relative;">
@@ -338,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateFilter = document.querySelector('input[name="date"]');
     
     // Clear buttons functionality
-    document.querySelectorAll('.btn-outline-secondary').forEach(btn => {
+    document.querySelectorAll('.btn-outline-danger').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             window.location.href = this.getAttribute('href');
@@ -356,14 +364,109 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(searchDebounce);
         searchDebounce = setTimeout(() => {
             filterForm.submit();
-        }, 500); // Adjust delay as needed
+        }, 2000); // Adjust delay as needed
     });
 });
 </script>
+
 <style>
-  /* Add some spacing between filter elements */
-  .input-group {
-      margin-bottom: 10px;
+/* Header Section Styles */
+.d-flex.justify-content-between {
+  gap: 15px;
+}
+
+/* Compact Filter Card Styles */
+.card {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card-body {
+  padding: 0.5rem !important;
+}
+
+.input-group-sm {
+  height: 32px;
+}
+
+.input-group-sm .form-control,
+.input-group-sm .btn {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.input-group-sm .btn-outline-danger {
+  padding: 0 8px;
+}
+
+/* Button Styles */
+.btn-outline-primary {
+  white-space: nowrap;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
-  </style>
+  
+  .d-flex.align-items-center {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .card {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .input-group {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .d-flex.align-items-center {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  h2 {
+    margin-bottom: 10px !important;
+  }
+  
+  #filterForm {
+    width: 100%;
+  }
+  
+  .input-group {
+    margin-bottom: 8px;
+  }
+}
+
+/* Form Control Focus Styles */
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Clear Button Hover Effect */
+.btn-outline-danger:hover {
+  color: #dc3545 !important;
+  background-color: transparent;
+}
+.form-control.border-primary:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-sm > .form-control.border-primary,
+.input-group-sm > .btn.border-primary {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+</style>
 {% endblock %}

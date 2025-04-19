@@ -36,7 +36,7 @@
 
 .scrollable-container1 {
     max-width: 1053px;
-    max-height: 540px;
+    max-height: 530px;
     overflow-x: hidden; /* Hide horizontal scrollbar */
     overflow-y: auto;   /* Show vertical scrollbar only when needed */
     
@@ -59,6 +59,11 @@
     display: flex;
     flex-wrap: wrap; /* Allow wrapping of items */
     gap: 16px; /* Add spacing between items */
+  }
+
+  .row1 {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping of items */
   }
   
   .col-md-4 {
