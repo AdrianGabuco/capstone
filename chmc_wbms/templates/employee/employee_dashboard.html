@@ -14,27 +14,81 @@
       max-height: none; /* Ensure responsiveness */
       overflow: visible;
     }
-  </style>
+    .privacy-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      margin-left: 10px;
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+    }
+    .blur-text {
+      filter: blur(5px);
+      transition: filter 0.3s;
+    }
+    .unblur-text {
+      filter: none;
+      transition: filter 0.3s;
+    }
+
+    .time-slots-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    
+    .time-slots-container .form-check {
+        margin-bottom: 0;
+        padding: 5px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+</style>
 
 <div class="container my-4">
     <div class="row text-center">
+        <!-- Daily Total Income Card -->
         <div class="col-md-4 mb-3">
             <div class="card p-3">
-                <p class="font-weight-bold">This Week Total Income</p>
-                <h2 class="text-primary">₱6,583</h2>
+                <p class="font-weight-bold">Daily Total Income</p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <h2 id="incomeDisplay" class="text-primary blur-text">₱{{ daily_income|default:"0" }}</h2>
+                    <i id="togglePrivacy" class="fa-solid fa-eye-slash privacy-toggle text-primary"></i>
+                </div>
+                <small class="text-muted">Click amount to view details</small>
+                <div class="d-none" id="incomeData">
+                    <span data-daily="{{ daily_income|default:'0' }}" 
+                          data-weekly="{{ weekly_income|default:'0' }}" 
+                          data-monthly="{{ monthly_income|default:'0' }}"></span>
+                </div>
             </div>
         </div>
+        
+        <!-- Daily Total Patient Served Card -->
         <div class="col-md-4 mb-3">
-            <div class="card p-3">
-                <p class="font-weight-bold">This Week Total Patient Serve</p>
-                <h2 class="text-primary">25</h2>
-            </div>
+            <a href="{% url 'employee_patients_list' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Daily Total Patient Served</p>
+                    <h2 class="text-primary">{{ daily_patients|default:"0" }}</h2>
+                    <small class="text-muted">Click to view patient list</small>
+                </div>
+            </a>
         </div>
+        
+        <!-- Total Examinations Today Card -->
         <div class="col-md-4 mb-3">
-            <div class="card p-3">
-                <p class="font-weight-bold">Total Appointments Today</p>
-                <h2 class="text-primary">8</h2>
-            </div>
+            <a href="{% url 'employee_examination' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Total Examinations Today</p>
+                    <h2 class="text-primary">{{ daily_examinations|default:"0" }}</h2>
+                    <small class="text-muted">Click to view examinations</small>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -66,6 +120,48 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Modal for Income Details -->
+<div class="modal fade" id="incomeModal" tabindex="-1" role="dialog" aria-labelledby="incomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incomeModalLabel">Income Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="incomeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">Daily</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="weekly-tab" data-bs-toggle="tab" data-bs-target="#weekly" type="button" role="tab">Weekly</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">Monthly</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="incomeTabsContent">
+                    <div class="tab-pane fade show active" id="daily" role="tabpanel">
+                        <h4>Daily Income: ₱<span id="dailyIncomeAmount">{{ daily_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed today.</p>
+                    </div>
+                    <div class="tab-pane fade" id="weekly" role="tabpanel">
+                        <h4>Weekly Income: ₱<span id="weeklyIncomeAmount">{{ weekly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this week.</p>
+                    </div>
+                    <div class="tab-pane fade" id="monthly" role="tabpanel">
+                        <h4>Monthly Income: ₱<span id="monthlyIncomeAmount">{{ monthly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this month.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal for Adding Appointment -->
@@ -123,6 +219,31 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
-
-
+<script>
+    $(document).ready(function() {
+        // Privacy toggle functionality
+        let isBlurred = true;
+        $('#togglePrivacy').click(function() {
+            const incomeDisplay = $('#incomeDisplay');
+            if (isBlurred) {
+                incomeDisplay.removeClass('blur-text').addClass('unblur-text');
+                $(this).removeClass('fa-eye-slash').addClass('fa-eye');
+            } else {
+                incomeDisplay.removeClass('unblur-text').addClass('blur-text');
+                $(this).removeClass('fa-eye').addClass('fa-eye-slash');
+            }
+            isBlurred = !isBlurred;
+        });
+        
+        // Income display click handler
+        $('#incomeDisplay').click(function() {
+            if (!isBlurred) {
+                $('#incomeModal').modal('show');
+            }
+        });
+        
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 {% endblock %}

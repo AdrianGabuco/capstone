@@ -17,11 +17,11 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count, Q, Prefetch, CharField
 from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
-from django.utils.timezone import now
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
-from datetime import datetime
+from datetime import datetime, timedelta
 from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm, UploadResultImageForm, EditExaminationForm, PatientEditForm
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from docx import Document
@@ -32,6 +32,7 @@ from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from urllib.parse import urlencode
 from django.db.models.functions import Cast
+from decimal import Decimal
 
 @csrf_protect
 def admin_login_view(request):
@@ -184,6 +185,38 @@ def create_account_view(request):
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_dashboard_view(request):
     account = request.user
+    today = timezone.now().date()
+    
+    # Calculate dashboard metrics using Payment model
+    # Daily income
+    daily_income = Payment.objects.filter(
+        date__date=today,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Weekly income (last 7 days including today)
+    start_of_week = today - timedelta(days=6)
+    weekly_income = Payment.objects.filter(
+        date__date__gte=start_of_week,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Monthly income
+    start_of_month = today.replace(day=1)
+    monthly_income = Payment.objects.filter(
+        date__date__gte=start_of_month,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Count daily patients served (distinct patients)
+    daily_patients = Examination.objects.filter(
+        date_created__date=today
+    ).values('patient').distinct().count()
+    
+    # Count daily examinations
+    daily_examinations = Examination.objects.filter(
+        date_created__date=today
+    ).count()
     # Fetch all appointments and service types for the dashboard
     appointments = Appointment.objects.all()  # or any filtering needed
     service_types = ServiceType.objects.all()
@@ -203,6 +236,11 @@ def employee_dashboard_view(request):
         form = AppointmentForm()
 
     context = {
+        'daily_income': daily_income,
+        'weekly_income': weekly_income,
+        'monthly_income': monthly_income,
+        'daily_patients': daily_patients,
+        'daily_examinations': daily_examinations,
         'appointments': appointments,
         'service_types': service_types,
         'form': form,
