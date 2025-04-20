@@ -14,14 +14,15 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
+from django.views.decorators.http import require_GET
 from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count, Q, Prefetch, CharField
-from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination
+from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination, AppointmentTimeSlot, TimeSlot
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.http import HttpResponseRedirect, JsonResponse, FileResponse, HttpResponse
 from django.urls import reverse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from .forms import UserCreationForm, EditAccountForm, EditProfileForm, AppointmentForm, ExaminationForm, UploadEditedDocumentForm, UploadResultImageForm, EditExaminationForm, PatientEditForm
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from docx import Document
@@ -228,10 +229,35 @@ def employee_dashboard_view(request):
             appointment.save()  # Save the appointment
             form.save_m2m()  # Save many-to-many fields (service types)
             
+            # Handle time slots
+            time_slots = form.cleaned_data.get('appointment_time', [])
+            for time_slot in time_slots:
+                AppointmentTimeSlot.objects.create(
+                    appointment=appointment,
+                    time_slot=time_slot,
+                    date=appointment.appointment_date
+                )
+            
+            special_slot_type = form.cleaned_data.get('special_slot')
+            if special_slot_type:
+                special_slot = TimeSlot.objects.get(
+                    is_special=True,
+                    special_type=special_slot_type
+                )
+                AppointmentTimeSlot.objects.create(
+                    appointment=appointment,
+                    time_slot=special_slot,
+                    date=appointment.appointment_date
+                )
+            
             # Show success message
             messages.success(request, 'Appointment has been scheduled successfully.')
             return redirect('employee_dashboard')  # Redirect to the dashboard to refresh
-        
+        else:
+            # If form is invalid, show error messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = AppointmentForm()
 
@@ -248,6 +274,73 @@ def employee_dashboard_view(request):
     }
 
     return render(request, 'employee/employee_dashboard.html', context)
+
+@require_GET
+def get_available_time_slots(request):
+    date_str = request.GET.get('date')
+    if not date_str:
+        return JsonResponse({'error': 'Date required'}, status=400)
+    
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    # Get ALL booked slot IDs for this date
+    booked_slot_ids = AppointmentTimeSlot.objects.filter(
+        date=date
+    ).values_list('time_slot_id', flat=True)
+    
+    # Get special slot bookings
+    booked_special = AppointmentTimeSlot.objects.filter(
+        date=date,
+        time_slot__is_special=True
+    ).select_related('time_slot')
+    
+    # Get ALL active slots
+    all_slots = TimeSlot.objects.filter(is_active=True)
+    
+    # Filter available slots
+    available_slots = []
+    for slot in all_slots:
+        # Skip if slot is booked
+        if slot.id in booked_slot_ids:
+            continue
+            
+        # Check special slot conflicts
+        if not slot.is_special:
+            slot_available = True
+            for special_booking in booked_special:
+                if (special_booking.time_slot.special_type == 'MORNING' and 
+                    slot.start_time >= time(8, 0) and slot.start_time < time(12, 0)):
+                    slot_available = False
+                    break
+                elif (special_booking.time_slot.special_type == 'AFTERNOON' and 
+                      slot.start_time >= time(14, 0) and slot.start_time < time(17, 0)):
+                    slot_available = False
+                    break
+                elif special_booking.time_slot.special_type == 'DAY':
+                    slot_available = False
+                    break
+            
+            if not slot_available:
+                continue
+                
+        available_slots.append(slot)
+    
+    # Format response
+    slots_data = [{
+        'id': slot.id,
+        'start_time': slot.start_time.strftime('%I:%M %p'),
+        'end_time': slot.end_time.strftime('%I:%M %p'),
+        'is_special': slot.is_special,
+        'special_type': slot.special_type if slot.is_special else None
+    } for slot in available_slots]
+    
+    return JsonResponse({
+        'available_slots': slots_data,
+        'date': date_str
+    })
 
 @login_required
 def edit_account_view(request, account_id):

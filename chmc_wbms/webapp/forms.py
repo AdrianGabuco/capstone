@@ -1,8 +1,9 @@
 from django import forms
-from .models import CustomUser, Appointment, ServiceType, Patient, Examination, Payment
+from .models import CustomUser, Appointment, ServiceType, Patient, Examination, Payment, TimeSlot, AppointmentTimeSlot
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils import timezone
 
 
 class UserCreationForm(forms.ModelForm):
@@ -335,6 +336,18 @@ class EditProfileForm(forms.ModelForm):
         return user
     
 class AppointmentForm(forms.ModelForm):
+    SPECIAL_SLOT_CHOICES = [
+        ('MORNING', 'Whole Morning (8AM-12PM)'),
+        ('AFTERNOON', 'Whole Afternoon (2PM-5PM)'),
+        ('DAY', 'Whole Day (8AM-5PM)')
+    ]
+
+    special_slot = forms.ChoiceField(
+        choices=SPECIAL_SLOT_CHOICES,
+        required=False,
+        widget=forms.RadioSelect
+    )
+
     service_types = forms.ModelMultipleChoiceField(
         queryset=ServiceType.objects.all(),
         widget=forms.CheckboxSelectMultiple,  # Allows multiple selections using checkboxes
@@ -343,11 +356,58 @@ class AppointmentForm(forms.ModelForm):
 
     class Meta:
         model = Appointment
-        fields = ['client_name', 'description', 'service_types', 'appointment_date', 'appointment_time']
+        fields = ['client_name', 'description', 'service_types', 'appointment_date']
         widgets = {
             'appointment_date': forms.DateInput(attrs={'type': 'date'}),
-            'appointment_time': forms.TimeInput(attrs={'type': 'time'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'appointment_date' in self.data:
+            try:
+                date = timezone.datetime.strptime(
+                    self.data.get('appointment_date'), 
+                    '%Y-%m-%d'
+                ).date()
+
+                booked_slots = AppointmentTimeSlot.objects.filter(
+                    date=date
+                ).values_list('time_slot', flat=True)
+
+                self.fields['appointment_time'] = forms.ModelMultipleChoiceField(
+                    queryset=TimeSlot.objects.exclude(id__in=booked_slots).filter(is_active=True),
+                    widget=forms.CheckboxSelectMultiple,
+                    required=True,
+                    label="Available Time Slots"
+                )
+                
+                special_slots = TimeSlot.objects.filter(is_special=True).exclude(id__in=booked_slots)
+                if special_slots.exists():
+                    self.fields['special_slot'].widget.choices = [
+                        (slot.special_type, slot.get_special_type_display()) 
+                        for slot in special_slots
+                    ]
+                else:
+                    del self.fields['special_slot']
+
+            except (ValueError, TypeError):
+                self.fields['appointment_time'] = forms.ModelMultipleChoiceField(
+                    queryset=TimeSlot.objects.none(),
+                    widget=forms.CheckboxSelectMultiple,
+                    required=True
+                )
+        elif self.instance.pk:
+            self.fields['appointment_time'] = forms.ModelMultipleChoiceField(
+                queryset=self.instance.appointment_time.all(),
+                widget=forms.CheckboxSelectMultiple,
+                required=True
+            )
+        else:
+            self.fields['appointment_time'] = forms.ModelMultipleChoiceField(
+                queryset=TimeSlot.objects.none(),
+                widget=forms.CheckboxSelectMultiple,
+                required=True
+            )
 
 class ExaminationForm(forms.Form):
     # Patient fields

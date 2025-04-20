@@ -30,6 +30,17 @@
       transition: filter 0.3s;
     }
 
+    .special-slots {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    }
+
+    .special-slots .form-check {
+    margin-bottom: 8px;
+    }
+
     .time-slots-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -115,7 +126,14 @@
                 <td>{{ appointment.description }}</td>
                 <td>{{ appointment.service_types.all|join:", " }}</td>
                 <td>{{ appointment.appointment_date }}</td>
-                <td>{{ appointment.appointment_time }}</td>
+                <td>
+                    {% for slot in appointment.appointmenttimeslot_set.all %}
+                        {{ slot.time_slot.start_time|time:"h:i A" }} - {{ slot.time_slot.end_time|time:"h:i A" }}
+                        {% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No Time Slots
+                    {% endfor %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -167,46 +185,77 @@
 <!-- Modal for Adding Appointment -->
 <div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="appointmentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content two">
+        <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="appointmentModalLabel">Schedule Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="container">
-                    <form method="post" action="{% url 'employee_dashboard' %}">
-                        {% csrf_token %}
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control rounded-3" name="client_name" id="floatingClientName" placeholder="Client Name" required>
-                            <label for="floatingClientName">Client Name</label>
+                <form method="post" action="{% url 'employee_dashboard' %}" id="appointmentForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" name="client_name" id="floatingClientName" placeholder="Client Name" required>
+                                <label for="floatingClientName">Client Name</label>
+                            </div>
                         </div>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control rounded-3" name="description" id="floatingDescription" placeholder="Description" required>
-                            <label for="floatingDescription">Description</label>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" name="appointment_date" id="floatingDate" placeholder="Appointment Date" required>
+                                <label for="floatingDate">Appointment Date</label>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Type of Service</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" name="description" id="floatingDescription" placeholder="Description" style="height: 100px" required></textarea>
+                        <label for="floatingDescription">Description</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type of Service</label>
+                        <div class="row">
                             {% for service in service_types %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="service_types" value="{{ service.id }}" id="service{{ service.id }}">
-                                <label class="form-check-label" for="service{{ service.id }}">{{ service.name }}</label>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="service_types" value="{{ service.id }}" id="service{{ service.id }}">
+                                    <label class="form-check-label" for="service{{ service.id }}">{{ service.name }}</label>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
-                        <div class="form-floating mb-3">
-                            <input type="date" class="form-control rounded-3" name="appointment_date" id="floatingDate" placeholder="Appointment Date" required>
-                            <label for="floatingDate">Appointment Date</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Special Slots</label>
+                        <div class="special-slots">
+                            {% if form.special_slot %}
+                                {{ form.special_slot }}
+                            {% else %}
+                                <p class="text-muted">No special slots available for this date</p>
+                            {% endif %}
                         </div>
-                        <div class="form-floating mb-3">
-                            <input type="time" class="form-control rounded-3" name="appointment_time" id="floatingTime" placeholder="Appointment Time" required>
-                            <label for="floatingTime">Appointment Time</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Regular Time Slots</label>
+                        <div class="time-slots-container">
+                            {% if form.appointment_time.field.queryset.exists %}
+                                {{ form.appointment_time }}
+                            {% else %}
+                                <div class="no-slots-available">
+                                    No regular time slots available for this date
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="d-flex justify-content-end mt-3">
-                            <button type="submit" name="add_appointment" class="btn btn-primary me-2">Add Appointment</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_appointment" class="btn btn-primary">Add Appointment</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -244,6 +293,131 @@
         
         // Initialize tooltips
         $('[data-toggle="tooltip"]').tooltip();
+        // Handle date change to load available time slots
+        $('#floatingDate').change(function() {
+            const selectedDate = $(this).val();
+            if (!selectedDate) return;
+            
+            // Get today's date in YYYY-MM-DD format
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Validate if selected date is in the past
+            if (selectedDate < today) {
+                alert('Cannot select a date in the past');
+                $(this).val('');
+                $('#timeSlotsContainer').html('<div class="no-slots-available">Select a future date</div>');
+                return;
+            }
+    
+            // Validate if selected date is Sunday (0=Sunday, 6=Saturday)
+            const dateObj = new Date(selectedDate);
+            if (dateObj.getDay() === 0) {  // Sunday
+                alert('Appointments are available Monday to Saturday only');
+                $(this).val('');
+                $('#timeSlotsContainer').html('<div class="no-slots-available">Select Monday-Saturday</div>');
+                return;
+            }
+            
+            // Fetch available time slots via AJAX
+            $.ajax({
+                url: '{% url "get_available_time_slots" %}',
+                data: {
+                    'date': selectedDate,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Received data:", data);  // Debug log
+    
+                    if (data.available_slots && data.available_slots.length > 0) {
+                        let regularHtml = '';
+                        let specialHtml = '';
+
+                        data.available_slots.forEach(function(slot) {
+                            if (slot.is_special) {
+                                specialHtml += `
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" 
+                                               name="special_slot" value="${slot.special_type}" 
+                                               id="special_${slot.id}">
+                                        <label class="form-check-label" for="special_${slot.id}">
+                                            ${slot.special_type === 'MORNING' ? 'Whole Morning (8AM-12PM)' : 
+                                              slot.special_type === 'AFTERNOON' ? 'Whole Afternoon (2PM-5PM)' : 
+                                              'Whole Day (8AM-5PM)'}
+                                        </label>
+                                    </div>
+                                `;
+                            } else {
+                                regularHtml += `
+                                    <div class="time-slot-checkbox">
+                                        <input type="checkbox" name="appointment_time" 
+                                               value="${slot.id}" id="slot_${slot.id}"
+                                               data-start-time="${slot.start_time}">
+                                        <label for="slot_${slot.id}">${slot.start_time} - ${slot.end_time}</label>
+                                    </div>
+                                `;
+                            }
+                    });
+        
+                    // Update both containers
+                    if (specialHtml) {
+                        $('.special-slots').html(`
+                            <label class="form-label">Special Slots</label>
+                            ${specialHtml}
+                        `);
+                    } else {
+                        $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                    }
+                    
+                    if (regularHtml) {
+                        $('.time-slots-container').html(`
+                            <label class="form-label">Regular Slots</label>
+                            ${regularHtml}
+                        `);
+                    } else {
+                        $('.time-slots-container').html('<div class="no-slots-available">No regular slots available</div>');
+                    }
+                } else {
+                    $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                    $('.time-slots-container').html('<div class="no-slots-available">No slots available</div>');
+                }
+            }               
+            });
+        });
+
+        $('input[name="special_slot"]').change(function() {
+                if ($(this).is(':checked')) {
+                    $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
+                } else {
+                    $('input[name="appointment_time"]').prop('disabled', false);
+                }
+        });
+
+            // Disable special slot when regular slots are selected
+        $('input[name="appointment_time"]').change(function() {
+                if ($('input[name="appointment_time"]:checked').length > 0) {
+                    $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
+                } else {
+                    $('input[name="special_slot"]').prop('disabled', false);
+                }
+        });
+
+        
+        // Form submission validation
+        $('#appointmentForm').submit(function(e) {
+            const selectedSlots = $('input[name="appointment_time"]:checked').length;
+            if (selectedSlots === 0) {
+                e.preventDefault();
+                alert(          
+                    'Please select at least one Regular Time slot:\n' +
+                    '(MORNING/DAY - 8:00AM)\n' +
+                    '(AFTERNOON - 2:00PM)'
+                );
+                return false;
+            }
+            return true;
+        });
     });
 </script>
 {% endblock %}

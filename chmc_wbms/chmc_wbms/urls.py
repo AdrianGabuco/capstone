@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, add_examination, search_patients_list
+from webapp.views import assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, add_examination, search_patients_list, get_available_time_slots
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -50,6 +50,7 @@ urlpatterns = [
     path('edit_patient/<int:patient_id>/', edit_patient, name='edit_patient'),
     path('assocdoc_dashboard/', assocdoc_dashboard_view, name='assocdoc_dashboard'),
     path('search-patients/', search_patients_list, name='search_patients_list'),
+    path('get-available-time-slots/', get_available_time_slots, name='get_available_time_slots'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

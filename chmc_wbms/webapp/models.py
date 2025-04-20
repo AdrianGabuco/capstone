@@ -7,6 +7,7 @@ from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.conf import settings
 from tinymce.models import HTMLField
 from django.core.files.base import ContentFile
+from django.core.exceptions import ValidationError
 
 
 class CustomUserManager(BaseUserManager):
@@ -110,18 +111,58 @@ class CustomUser(AbstractUser):
         full_name = f"{self.first_name} {middle_name} {self.last_name}".strip()
         return full_name
     
+class TimeSlot(models.Model):
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)  # To enable/disable slots
+    is_special = models.BooleanField(default=False)  # For whole day/morning/afternoon
+    special_type = models.CharField(max_length=20, blank=True, null=True,
+                                  choices=[
+                                      ('MORNING', 'Whole Morning (8AM-12PM)'),
+                                      ('AFTERNOON', 'Whole Afternoon (2PM-5PM)'),
+                                      ('DAY', 'Whole Day (8AM-5PM)')
+                                  ])
 
+    class Meta:
+        ordering = ['start_time']
+
+    def __str__(self):
+        if self.is_special:
+            return self.get_special_type_display()
+        return f"{self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
     
 class Appointment(models.Model):
     client_name = models.CharField(max_length=100, default="Client")
     description = models.TextField()
     service_types = models.ManyToManyField(ServiceType, through='AppointmentServiceType')
     appointment_date = models.DateField(default=timezone.now)
-    appointment_time = models.TimeField(default=timezone.now)
+    appointment_time = models.ManyToManyField(TimeSlot, through='AppointmentTimeSlot')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Appointment for {self.client_name} on {self.appointment_date}"
+    
+    def clean(self):
+        # Validate that the appointment date is not in the past
+        if self.appointment_date < timezone.now().date():
+            raise ValidationError("Appointment date cannot be in the past.")
+        
+        # Validate it's a weekday (Mon-Fri)
+        if self.appointment_date.weekday() >= 5:  # 5=Saturday, 6=Sunday
+            raise ValidationError("Appointments are only available on weekdays (Monday to Friday).")
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+
+class AppointmentTimeSlot(models.Model):
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE)
+    date = models.DateField()  # The date this slot is booked for
+    
+    class Meta:
+        unique_together = ['time_slot', 'date'] 
 
 class AppointmentServiceType(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
