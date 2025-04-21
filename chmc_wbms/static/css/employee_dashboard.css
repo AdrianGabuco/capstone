@@ -35,7 +35,7 @@
 }
 
 .scrollable-container1 {
-    max-width: 1053px;
+    max-width: 1230px;
     max-height: 530px;
     overflow-x: hidden; /* Hide horizontal scrollbar */
     overflow-y: auto;   /* Show vertical scrollbar only when needed */
