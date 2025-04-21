@@ -5,6 +5,12 @@
 {% block content %}
 
 <style>
+    .modal-body1 {
+        max-height: 770px;
+        position: relative;
+        flex: 1 1 auto;
+        padding: var(--bs-modal-padding);
+    }
     .modal-dialog {
       width: 800px; /* Set your desired width */
       max-width: 90%; /* Ensure responsiveness */
@@ -30,34 +36,99 @@
       transition: filter 0.3s;
     }
 
-    .special-slots {
-    padding: 10px;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    }
-
-    .special-slots .form-check {
-    margin-bottom: 8px;
-    }
-
-    .time-slots-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-        max-height: 200px;
-        overflow-y: auto;
-        padding: 10px;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-    }
-    
-    .time-slots-container .form-check {
-        margin-bottom: 0;
-        padding: 5px;
-        background: #f8f9fa;
-        border-radius: 4px;
-    }
+    .normal-text {
+        letter-spacing: normal;
+        color: inherit;
+        text-shadow: none;
+        transition: all 0.3s;
+      }
+  
+      .special-slots {
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          margin-bottom: 15px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+      }
+  
+      .special-slots .btn-special {
+          position: relative;
+          flex: 1 1 calc(33.333% - 10px);
+          min-width: 120px;
+      }
+  
+      .special-slots .btn-special input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .special-slots .btn-special label {
+          display: block;
+          padding: 10px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+      }
+  
+      .special-slots .btn-special input[type="radio"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .time-slots-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 10px;
+          max-height: 200px;
+          overflow-y: auto;
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+      }
+      
+      .time-slots-container .btn-time {
+          position: relative;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .time-slots-container .btn-time label {
+          display: block;
+          padding: 8px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 0.9rem;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .no-slots-available {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 20px;
+          color: #6c757d;
+      }
 
 </style>
 
@@ -190,7 +261,7 @@
                 <h5 class="modal-title" id="appointmentModalLabel">Schedule Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body1">
                 <form method="post" action="{% url 'employee_dashboard' %}" id="appointmentForm">
                     {% csrf_token %}
                     <div class="row">
@@ -231,7 +302,14 @@
                         <label class="form-label">Special Slots</label>
                         <div class="special-slots">
                             {% if form.special_slot %}
-                                {{ form.special_slot }}
+                                {% for choice in form.special_slot %}
+                                <div class="btn-special">
+                                    <input type="radio" name="special_slot" id="special_{{ forloop.counter }}" value="{{ choice.data.value }}">
+                                    <label for="special_{{ forloop.counter }}">
+                                        {{ choice.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
                             {% else %}
                                 <p class="text-muted">No special slots available for this date</p>
                             {% endif %}
@@ -242,7 +320,14 @@
                         <label class="form-label">Regular Time Slots</label>
                         <div class="time-slots-container">
                             {% if form.appointment_time.field.queryset.exists %}
-                                {{ form.appointment_time }}
+                                {% for slot in form.appointment_time %}
+                                <div class="btn-time">
+                                    <input type="checkbox" name="appointment_time" id="slot_{{ forloop.counter }}" value="{{ slot.data.value }}">
+                                    <label for="slot_{{ forloop.counter }}">
+                                        {{ slot.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
                             {% else %}
                                 <div class="no-slots-available">
                                     No regular time slots available for this date
@@ -293,6 +378,7 @@
         
         // Initialize tooltips
         $('[data-toggle="tooltip"]').tooltip();
+        
         // Handle date change to load available time slots
         $('#floatingDate').change(function() {
             const selectedDate = $(this).val();
@@ -305,7 +391,7 @@
             if (selectedDate < today) {
                 alert('Cannot select a date in the past');
                 $(this).val('');
-                $('#timeSlotsContainer').html('<div class="no-slots-available">Select a future date</div>');
+                $('.time-slots-container').html('<div class="no-slots-available">Select a future date</div>');
                 return;
             }
     
@@ -314,7 +400,7 @@
             if (dateObj.getDay() === 0) {  // Sunday
                 alert('Appointments are available Monday to Saturday only');
                 $(this).val('');
-                $('#timeSlotsContainer').html('<div class="no-slots-available">Select Monday-Saturday</div>');
+                $('.time-slots-container').html('<div class="no-slots-available">Select Monday-Saturday</div>');
                 return;
             }
             
@@ -337,83 +423,78 @@
                         data.available_slots.forEach(function(slot) {
                             if (slot.is_special) {
                                 specialHtml += `
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" 
-                                               name="special_slot" value="${slot.special_type}" 
-                                               id="special_${slot.id}">
-                                        <label class="form-check-label" for="special_${slot.id}">
-                                            ${slot.special_type === 'MORNING' ? 'Whole Morning (8AM-12PM)' : 
-                                              slot.special_type === 'AFTERNOON' ? 'Whole Afternoon (2PM-5PM)' : 
+                                    <div class="btn-special">
+                                        <input type="radio" name="special_slot" id="special_${slot.id}" value="${slot.special_type}">
+                                        <label for="special_${slot.id}">
+                                            ${slot.special_type === 'MORNING' ? 'Morning (8AM-12PM)' : 
+                                              slot.special_type === 'AFTERNOON' ? 'Afternoon (2PM-5PM)' : 
                                               'Whole Day (8AM-5PM)'}
                                         </label>
                                     </div>
                                 `;
                             } else {
                                 regularHtml += `
-                                    <div class="time-slot-checkbox">
+                                    <div class="btn-time">
                                         <input type="checkbox" name="appointment_time" 
-                                               value="${slot.id}" id="slot_${slot.id}"
-                                               data-start-time="${slot.start_time}">
-                                        <label for="slot_${slot.id}">${slot.start_time} - ${slot.end_time}</label>
+                                               id="slot_${slot.id}" value="${slot.id}">
+                                        <label for="slot_${slot.id}">
+                                            ${slot.start_time} - ${slot.end_time}
+                                        </label>
                                     </div>
                                 `;
                             }
-                    });
+                        });
         
-                    // Update both containers
-                    if (specialHtml) {
-                        $('.special-slots').html(`
-                            <label class="form-label">Special Slots</label>
-                            ${specialHtml}
-                        `);
+                        // Update both containers
+                        if (specialHtml) {
+                            $('.special-slots').html(specialHtml);
+                        } else {
+                            $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                        }
+                        
+                        if (regularHtml) {
+                            $('.time-slots-container').html(regularHtml);
+                        } else {
+                            $('.time-slots-container').html('<div class="no-slots-available">No regular slots available</div>');
+                        }
                     } else {
                         $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                        $('.time-slots-container').html('<div class="no-slots-available">No slots available</div>');
                     }
                     
-                    if (regularHtml) {
-                        $('.time-slots-container').html(`
-                            <label class="form-label">Regular Slots</label>
-                            ${regularHtml}
-                        `);
-                    } else {
-                        $('.time-slots-container').html('<div class="no-slots-available">No regular slots available</div>');
-                    }
-                } else {
-                    $('.special-slots').html('<p class="text-muted">No special slots available</p>');
-                    $('.time-slots-container').html('<div class="no-slots-available">No slots available</div>');
+                    // Set up the interaction between special and regular slots
+                    $('input[name="special_slot"]').change(function() {
+                        if ($(this).is(':checked')) {
+                            $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="appointment_time"]').prop('disabled', false);
+                        }
+                    });
+
+                    $('input[name="appointment_time"]').change(function() {
+                        if ($('input[name="appointment_time"]:checked').length > 0) {
+                            $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="special_slot"]').prop('disabled', false);
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching time slots:", error);
+                    $('.special-slots').html('<p class="text-muted">Error loading slots</p>');
+                    $('.time-slots-container').html('<div class="no-slots-available">Error loading slots</div>');
                 }
-            }               
             });
         });
-
-        $('input[name="special_slot"]').change(function() {
-                if ($(this).is(':checked')) {
-                    $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
-                } else {
-                    $('input[name="appointment_time"]').prop('disabled', false);
-                }
-        });
-
-            // Disable special slot when regular slots are selected
-        $('input[name="appointment_time"]').change(function() {
-                if ($('input[name="appointment_time"]:checked').length > 0) {
-                    $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
-                } else {
-                    $('input[name="special_slot"]').prop('disabled', false);
-                }
-        });
-
         
         // Form submission validation
         $('#appointmentForm').submit(function(e) {
-            const selectedSlots = $('input[name="appointment_time"]:checked').length;
-            if (selectedSlots === 0) {
+            const hasSpecialSlot = $('input[name="special_slot"]:checked').length > 0;
+            const hasRegularSlots = $('input[name="appointment_time"]:checked').length > 0;
+            
+            if (!hasSpecialSlot && !hasRegularSlots) {
                 e.preventDefault();
-                alert(          
-                    'Please select at least one Regular Time slot:\n' +
-                    '(MORNING/DAY - 8:00AM)\n' +
-                    '(AFTERNOON - 2:00PM)'
-                );
+                alert('Please select at least one time slot (either special or regular)');
                 return false;
             }
             return true;
