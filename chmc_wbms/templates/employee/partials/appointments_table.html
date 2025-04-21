@@ -1,0 +1,47 @@
+<table class="table table-bordered text-center">
+    <thead class="thead-light">
+        <tr>
+            <th>Client</th>
+            <th>Description</th>
+            <th>Type of Service</th>
+            <th>Appointment Date</th>
+            <th>Appointment Time</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if appointments %}
+            {% for appointment in page_obj %}
+            <tr>
+                <td>{{ appointment.client_name }}</td>
+                <td>{{ appointment.description }}</td>
+                <td>{{ appointment.service_types.all|join:", " }}</td>
+                <td>{{ appointment.appointment_date }}</td>
+                <td>
+                    {% for slot in appointment.appointmenttimeslot_set.all %}
+                        {{ slot.time_slot.start_time|time:"h:i A" }} - {{ slot.time_slot.end_time|time:"h:i A" }}
+                        {% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No Time Slots
+                    {% endfor %}
+                </td>
+                <td class="action-buttons">
+                    <button class="btn btn-sm btn-warning edit-appointment" 
+                            data-appointment-id="{{ appointment.id }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-appointment" 
+                            data-appointment-id="{{ appointment.id }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="6" class="text-muted">No appointments on this day</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+{% include 'employee/includes/pagination.html' %}

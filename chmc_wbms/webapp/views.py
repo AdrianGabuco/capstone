@@ -14,7 +14,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import user_passes_test, login_required
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import Sum, Count, Q, Prefetch, CharField
 from webapp.models import Appointment, Payment, CustomUser, ServiceType, Patient, Examination, AppointmentTimeSlot, TimeSlot
@@ -218,46 +218,122 @@ def employee_dashboard_view(request):
     daily_examinations = Examination.objects.filter(
         date_created__date=today
     ).count()
-    # Fetch all appointments and service types for the dashboard
-    appointments = Appointment.objects.all()  # or any filtering needed
+
+    # Handle date filtering
+    selected_date = request.GET.get('date')
+    try:
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else None
+    except (ValueError, TypeError):
+        selected_date = None
+
+    # Base queryset - will be filtered if date is specified
+    appointments = Appointment.objects.all().order_by('appointment_date')
+    
+    # Apply date filter if specific date is selected (not None and not empty string)
+    if selected_date:
+        appointments = appointments.filter(appointment_date=selected_date)
+
+    paginator = Paginator(appointments, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    base_query = ''
+    if selected_date:
+        base_query = f'date={selected_date.strftime("%Y-%m-%d")}'
+
     service_types = ServiceType.objects.all()
 
-    if request.method == 'POST' and 'add_appointment' in request.POST:
-        form = AppointmentForm(request.POST)
-        if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.save()  # Save the appointment
-            form.save_m2m()  # Save many-to-many fields (service types)
+    if request.method == 'POST':
+        # Handle appointment creation
+        if 'add_appointment' in request.POST:
+            form = AppointmentForm(request.POST)
+            if form.is_valid():
+                appointment = form.save(commit=False)
+                appointment.save()
+                form.save_m2m()  # Save service types
+                
+                # Handle time slots
+                time_slot_ids = request.POST.getlist('appointment_time')
+                for slot_id in time_slot_ids:
+                    time_slot = TimeSlot.objects.get(id=slot_id)
+                    AppointmentTimeSlot.objects.create(
+                        appointment=appointment,
+                        time_slot=time_slot,
+                        date=appointment.appointment_date
+                    )
+                
+                # Handle special slot if selected
+                special_slot_type = request.POST.get('special_slot')
+                if special_slot_type:
+                    special_slot = TimeSlot.objects.get(
+                        is_special=True,
+                        special_type=special_slot_type
+                    )
+                    AppointmentTimeSlot.objects.create(
+                        appointment=appointment,
+                        time_slot=special_slot,
+                        date=appointment.appointment_date
+                    )
+                
+                messages.success(request, 'Appointment scheduled successfully.')
+                return redirect('employee_dashboard')
+        
+        # Handle appointment update
+        elif 'update_appointment' in request.POST:
+            appointment_id = request.POST.get('appointment_id')
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+                form = AppointmentForm(request.POST, instance=appointment)
+                if form.is_valid():
+                    updated_appointment = form.save(commit=False)
+                    updated_appointment.save()
+                    form.save_m2m()  # Update service types
+                    
+                    # Clear existing time slots
+                    appointment.appointmenttimeslot_set.all().delete()
+                    
+                    # Add new regular time slots
+                    time_slot_ids = request.POST.getlist('appointment_time')
+                    for slot_id in time_slot_ids:
+                        time_slot = TimeSlot.objects.get(id=slot_id)
+                        AppointmentTimeSlot.objects.create(
+                            appointment=appointment,
+                            time_slot=time_slot,
+                            date=appointment.appointment_date
+                        )
+                    
+                    # Handle special slot if selected
+                    special_slot_type = request.POST.get('special_slot')
+                    if special_slot_type:
+                        special_slot = TimeSlot.objects.get(
+                            is_special=True,
+                            special_type=special_slot_type
+                        )
+                        AppointmentTimeSlot.objects.create(
+                            appointment=appointment,
+                            time_slot=special_slot,
+                            date=appointment.appointment_date
+                        )
+                    
+                    messages.success(request, 'Appointment updated successfully.')
+                    return redirect('employee_dashboard')
             
-            # Handle time slots
-            time_slots = form.cleaned_data.get('appointment_time', [])
-            for time_slot in time_slots:
-                AppointmentTimeSlot.objects.create(
-                    appointment=appointment,
-                    time_slot=time_slot,
-                    date=appointment.appointment_date
-                )
-            
-            special_slot_type = form.cleaned_data.get('special_slot')
-            if special_slot_type:
-                special_slot = TimeSlot.objects.get(
-                    is_special=True,
-                    special_type=special_slot_type
-                )
-                AppointmentTimeSlot.objects.create(
-                    appointment=appointment,
-                    time_slot=special_slot,
-                    date=appointment.appointment_date
-                )
-            
-            # Show success message
-            messages.success(request, 'Appointment has been scheduled successfully.')
-            return redirect('employee_dashboard')  # Redirect to the dashboard to refresh
-        else:
-            # If form is invalid, show error messages
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
+            except Exception as e:
+                messages.error(request, f'Error updating appointment: {str(e)}')
+        
+        # Handle appointment deletion
+        elif 'delete_appointment' in request.POST:
+            appointment_id = request.POST.get('appointment_id')
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+                appointment.delete()
+                messages.success(request, 'Appointment deleted successfully.')
+                return redirect('employee_dashboard')
+            except Appointment.DoesNotExist:
+                messages.error(request, 'Appointment not found')
+            except Exception as e:
+                messages.error(request, f'Error deleting appointment: {str(e)}')
+
     else:
         form = AppointmentForm()
 
@@ -271,7 +347,12 @@ def employee_dashboard_view(request):
         'service_types': service_types,
         'form': form,
         'account': account,
+        'selected_date': selected_date.strftime('%Y-%m-%d') if selected_date else '',
+        'page_obj': page_obj,
+        'base_query': base_query,
     }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'employee/partials/appointments_table.html', context)
 
     return render(request, 'employee/employee_dashboard.html', context)
 
@@ -341,6 +422,79 @@ def get_available_time_slots(request):
         'available_slots': slots_data,
         'date': date_str
     })
+
+def get_appointment_details(request):
+    if request.method == 'GET' and request.GET.get('appointment_id'):
+        try:
+            appointment = Appointment.objects.get(id=request.GET['appointment_id'])
+            
+            # Get current service types
+            service_types = list(appointment.service_types.values_list('id', flat=True))
+            
+            # Get all time slots for this appointment
+            appointment_slots = appointment.appointmenttimeslot_set.select_related('time_slot').all()
+            
+            # Separate regular and special slots
+            current_time_slots = []
+            current_special_slots = []
+            
+            for slot in appointment_slots:
+                if slot.time_slot.is_special:
+                    current_special_slots.append(slot.time_slot.special_type)
+                else:
+                    current_time_slots.append(slot.time_slot.id)
+            
+            # Get available time slots for the appointment date
+            available_time_slots = []
+            for slot in TimeSlot.objects.filter(is_active=True, is_special=False):
+                start_time = slot.start_time.strftime('%I:%M %p').lstrip('0')
+                end_time = slot.end_time.strftime('%I:%M %p').lstrip('0')
+                available_time_slots.append({
+                    'id': slot.id,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'display': f"{start_time} - {end_time}"
+                })
+            
+            # Get available special slots
+            available_special_slots = []
+            special_slot_types = [
+                ('MORNING', 'Morning (8AM-12PM)'),
+                ('AFTERNOON', 'Afternoon (2PM-5PM)'),
+                ('DAY', 'Whole Day (8AM-5PM)')
+            ]
+            
+            for slot_type, display_name in special_slot_types:
+                # Check if this special slot type is already booked by another appointment
+                is_available = not AppointmentTimeSlot.objects.filter(
+                    date=appointment.appointment_date,
+                    time_slot__special_type=slot_type
+                ).exclude(appointment=appointment).exists()
+                
+                if is_available:
+                    available_special_slots.append({
+                        'special_type': slot_type,
+                        'display_name': display_name
+                    })
+            
+            return JsonResponse({
+                'success': True,
+                'appointment': {
+                    'client_name': appointment.client_name,
+                    'appointment_date': appointment.appointment_date.strftime('%Y-%m-%d'),
+                    'description': appointment.description,
+                    'service_types': service_types,
+                },
+                'current_time_slots': current_time_slots,
+                'current_special_slots': current_special_slots,
+                'available_time_slots': list(available_time_slots),
+                'available_special_slots': available_special_slots,
+            })
+        except Appointment.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Appointment not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 @login_required
 def edit_account_view(request, account_id):

@@ -3,29 +3,39 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?{{ base_query }}&page=1">&laquo; First</a>
+            <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page=1" aria-label="First">
+                &laquo; First
+            </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?{{ base_query }}&page={{ page_obj.previous_page_number }}">Previous</a>
+            <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                Previous
+            </a>
         </li>
         {% endif %}
 
         {% for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
-                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                 <li class="page-item">
-                    <a class="page-link" href="?{{ base_query }}&page={{ num }}">{{ num }}</a>
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ num }}">{{ num }}</a>
                 </li>
             {% endif %}
         {% endfor %}
 
         {% if page_obj.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?{{ base_query }}&page={{ page_obj.next_page_number }}">Next</a>
+            <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                Next
+            </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?{{ base_query }}&page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+            <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                Last &raquo;
+            </a>
         </li>
         {% endif %}
     </ul>
