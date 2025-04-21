@@ -141,7 +141,7 @@ def admin_logout_view(request):
 
 def employee_logout_view(request):
     logout(request)  # This logs out the user
-    return redirect('employee_login') 
+    return redirect('user_login') 
 
 
 def create_account_view(request):
