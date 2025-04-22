@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import delete_edited_document_view,delete_patient_view,delete_examination_view, admin_edit_patient,admin_add_examination, admin_document_results_view, admin_examination_view, assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, document_results_view, add_examination, search_patients_list, get_available_time_slots, get_appointment_details
+from webapp.views import assocdoc_document_results_view, assocdoc_patients_list_view, assocdoc_examination_view,assocdoc_logout_view, assocdoc_edit_profile_view, delete_edited_document_view,delete_patient_view,delete_examination_view, admin_edit_patient,admin_add_examination, admin_document_results_view, admin_examination_view, assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, document_results_view, add_examination, search_patients_list, get_available_time_slots, get_appointment_details
 from django.conf.urls.static import static
 from django.conf import settings
     
@@ -68,13 +68,21 @@ urlpatterns = [
     #Authenticity Checker
     path('verify-document/', verify_document, name='verify_document'),
     
-    
-    path('assocdoc_dashboard/', assocdoc_dashboard_view, name='assocdoc_dashboard'),
-    
     #Appointment
     path('get-available-time-slots/', get_available_time_slots, name='get_available_time_slots'),
     path('get-appointment-details/', get_appointment_details, name='get_appointment_details'),
+
+    #Associated Doctor
+    path('assocdoc_dashboard/', assocdoc_dashboard_view, name='assocdoc_dashboard'),
+    path('assocdoc_edit_profile/<int:account_id>/', assocdoc_edit_profile_view, name='assocdoc_edit_profile'),
+    path('assocdoc_logout/', assocdoc_logout_view, name='assocdoc_logout'),
+    path('assocdoc_examination/', assocdoc_examination_view, name='assocdoc_examination'),
+    path('assocdoc_patients_list/', assocdoc_patients_list_view, name='assocdoc_patients_list'),
+    path('assocdoc_patients_list/<int:patient_id>/', assocdoc_patients_list_view, name='assocdoc_patients_list_with_id'),
+    path('assocdoc_document_results/', assocdoc_document_results_view, name='assocdoc_document_results'),
+
 ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

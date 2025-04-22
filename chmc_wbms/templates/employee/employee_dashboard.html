@@ -345,7 +345,7 @@
                 <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body1">
+            <div class="modal-body">  
                 <form method="post" action="{% url 'employee_dashboard' %}" id="editAppointmentForm">
                     {% csrf_token %}
                     <input type="hidden" name="appointment_id" id="editAppointmentId">
@@ -640,93 +640,93 @@
             return true;
         });
         $('.edit-appointment').click(function() {
-    const appointmentId = $(this).data('appointment-id');
-    
-    // Fetch appointment details via AJAX
-    $.ajax({
-        url: '{% url "get_appointment_details" %}',
-        data: {
-            'appointment_id': appointmentId,
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
-        },
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            if (data.success) {
-                // Populate form fields
-                $('#editAppointmentId').val(appointmentId);
-                $('#editClientName').val(data.appointment.client_name);
-                $('#editAppointmentDate').val(data.appointment.appointment_date);
-                $('#editDescription').val(data.appointment.description);
-                
-                // Set service types
-                $('.service-type-checkbox').prop('checked', false);
-                data.appointment.service_types.forEach(function(serviceId) {
-                    $('#editService' + serviceId).prop('checked', true);
-                });
-                
-                // Populate special slots
-                let specialSlotsHtml = '';
-                data.available_special_slots.forEach(function(slot) {
-                    const isSelected = data.current_special_slots.includes(slot.special_type);
-                    specialSlotsHtml += `
-                        <div class="btn-special">
-                            <input type="radio" name="special_slot" id="editSpecial_${slot.special_type}" 
-                                   value="${slot.special_type}" ${isSelected ? 'checked' : ''}>
-                            <label for="editSpecial_${slot.special_type}">
-                                ${slot.special_type === 'MORNING' ? 'Morning (8AM-12PM)' : 
-                                  slot.special_type === 'AFTERNOON' ? 'Afternoon (2PM-5PM)' : 
-                                  'Whole Day (8AM-5PM)'}
-                            </label>
-                        </div>
-                    `;
-                });
-                $('#editSpecialSlots').html(specialSlotsHtml || '<p class="text-muted">No special slots available</p>');
-                
-                // Populate regular time slots
-                let timeSlotsHtml = '';
-                data.available_time_slots.forEach(function(slot) {
-                    const isSelected = data.current_time_slots.includes(slot.id.toString());
-                    timeSlotsHtml += `
-                        <div class="btn-time">
-                            <input type="checkbox" name="appointment_time" 
-                                   id="editSlot_${slot.id}" value="${slot.id}" ${isSelected ? 'checked' : ''}>
-                            <label for="editSlot_${slot.id}">
-                                ${slot.start_time} - ${slot.end_time}
-                            </label>
-                        </div>
-                    `;
-                });
-                $('#editTimeSlots').html(timeSlotsHtml || '<div class="no-slots-available">No regular slots available</div>');
-                
-                // Show the modal
-                $('#editAppointmentModal').modal('show');
-                
-                // Set up the interaction between special and regular slots
-                $('input[name="special_slot"]').change(function() {
-                    if ($(this).is(':checked')) {
-                        $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
-                    } else {
-                        $('input[name="appointment_time"]').prop('disabled', false);
-                    }
-                });
+        const appointmentId = $(this).data('appointment-id');
+        
+        // Fetch appointment details via AJAX
+        $.ajax({
+            url: '{% url "get_appointment_details" %}',
+            data: {
+                'appointment_id': appointmentId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    // Populate form fields
+                    $('#editAppointmentId').val(appointmentId);
+                    $('#editClientName').val(data.appointment.client_name);
+                    $('#editAppointmentDate').val(data.appointment.appointment_date);
+                    $('#editDescription').val(data.appointment.description);
+                    
+                    // Set service types
+                    $('.service-type-checkbox').prop('checked', false);
+                    data.appointment.service_types.forEach(function(serviceId) {
+                        $('#editService' + serviceId).prop('checked', true);
+                    });
+                    
+                    // Populate special slots
+                    let specialSlotsHtml = '';
+                    data.available_special_slots.forEach(function(slot) {
+                        const isSelected = data.current_special_slots.includes(slot.special_type);
+                        specialSlotsHtml += `
+                            <div class="btn-special">
+                                <input type="radio" name="special_slot" id="editSpecial_${slot.special_type}" 
+                                    value="${slot.special_type}" ${isSelected ? 'checked' : ''}>
+                                <label for="editSpecial_${slot.special_type}">
+                                    ${slot.special_type === 'MORNING' ? 'Morning (8AM-12PM)' : 
+                                    slot.special_type === 'AFTERNOON' ? 'Afternoon (2PM-5PM)' : 
+                                    'Whole Day (8AM-5PM)'}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    $('#editSpecialSlots').html(specialSlotsHtml || '<p class="text-muted">No special slots available</p>');
+                    
+                    // Populate regular time slots
+                    let timeSlotsHtml = '';
+                    data.available_time_slots.forEach(function(slot) {
+                        const isSelected = data.current_time_slots.includes(slot.id.toString());
+                        timeSlotsHtml += `
+                            <div class="btn-time">
+                                <input type="checkbox" name="appointment_time" 
+                                    id="editSlot_${slot.id}" value="${slot.id}" ${isSelected ? 'checked' : ''}>
+                                <label for="editSlot_${slot.id}">
+                                    ${slot.start_time} - ${slot.end_time}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    $('#editTimeSlots').html(timeSlotsHtml || '<div class="no-slots-available">No regular slots available</div>');
+                    
+                    // Show the modal
+                    $('#editAppointmentModal').modal('show');
+                    
+                    // Set up the interaction between special and regular slots
+                    $('input[name="special_slot"]').change(function() {
+                        if ($(this).is(':checked')) {
+                            $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="appointment_time"]').prop('disabled', false);
+                        }
+                    });
 
-                $('input[name="appointment_time"]').change(function() {
-                    if ($('input[name="appointment_time"]:checked').length > 0) {
-                        $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
-                    } else {
-                        $('input[name="special_slot"]').prop('disabled', false);
-                    }
-                });
-            } else {
-                alert('Error loading appointment details: ' + data.message);
+                    $('input[name="appointment_time"]').change(function() {
+                        if ($('input[name="appointment_time"]:checked').length > 0) {
+                            $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="special_slot"]').prop('disabled', false);
+                        }
+                    });
+                } else {
+                    alert('Error loading appointment details: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error fetching appointment details: ' + error);
             }
-        },
-        error: function(xhr, status, error) {
-            alert('Error fetching appointment details: ' + error);
-        }
+        });
     });
-});
 
 // Delete Appointment Handler
 $('.delete-appointment').click(function() {

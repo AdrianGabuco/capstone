@@ -160,17 +160,12 @@ def admin_dashboard_view(request):
         status='Paid'
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
-    # Count daily patients served (distinct patients)
-    daily_patients = Examination.objects.filter(
-        date_created__date=today
-    ).values('patient').distinct().count()
-    
-    # Count daily examinations
-    daily_examinations = Examination.objects.filter(
-        date_created__date=today
-    ).count()
+    total_patients = Patient.objects.count()
 
+    # Count all examinations
+    total_examinations = Examination.objects.count()
     # Handle date filtering
+
     selected_date = request.GET.get('date')
     try:
         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else None
@@ -292,8 +287,8 @@ def admin_dashboard_view(request):
         'daily_income': daily_income,
         'weekly_income': weekly_income,
         'monthly_income': monthly_income,
-        'daily_patients': daily_patients,
-        'daily_examinations': daily_examinations,
+        'total_patients': total_patients,
+        'total_examinations': total_examinations,
         'appointments': appointments,
         'service_types': service_types,
         'form': form,
@@ -992,6 +987,7 @@ def edit_profile_view(request, account_id):
     
     return render(request, 'employee/edit_profile.html', {'form': form, 'account': account})
 
+
 def search_patients_list(request):
     query = request.GET.get('q', '').strip()
     if not query:
@@ -1581,8 +1577,6 @@ def upload_examination_result_image(request, pk):
                 user = request.user
                 if user.is_superuser:
                     return redirect('admin_examination')
-                elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
-                    return redirect('assocdoc_examination')
                 else:
                     return redirect('employee_examination')
         else:
@@ -1590,8 +1584,6 @@ def upload_examination_result_image(request, pk):
     user = request.user
     if user.is_superuser:
         return redirect('admin_examination')
-    elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
-        return redirect('assocdoc_examination')
     else:
         return redirect('employee_examination')
 
@@ -1630,8 +1622,6 @@ def edit_examination(request, pk):
             if not next_template:
                 if account.is_superuser:
                     next_template = 'admin/examination.html'
-                elif hasattr(account, 'is_associated_doctor') and account.is_associated_doctor:
-                    next_template = 'associated_doctor/examination.html'
                 else:
                     next_template = 'employee/examination.html'
             
@@ -1667,9 +1657,7 @@ def edit_examination(request, pk):
     next_template = request.GET.get('next_template')
     if not next_template:
         if account.is_superuser:
-            next_template = 'admin/admin_examination.html'
-        elif hasattr(account, 'is_associated_doctor') and account.is_associated_doctor:
-            next_template = 'associated_doctor/examination.html'
+            next_template = 'admin/examination.html'
         else:
             next_template = 'employee/examination.html'
 
@@ -1695,6 +1683,268 @@ def edit_patient(request, patient_id):
     return render(request, 'employee/edit_patient.html', context)
 
 @user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_edit_profile_view(request, account_id):
+    account = get_object_or_404(CustomUser, id=account_id)
+    form = EditProfileForm(request.POST or None, request.FILES or None, instance=account)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Account updated successfully.')
+            return redirect('assocdoc_dashboard')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    
+    return render(request, 'associated_doctor/edit_profile.html', {'form': form, 'account': account})
+
+@user_passes_test(lambda u: u.is_associated_doctor)
 def assocdoc_dashboard_view(request):
     account = request.user
-    return render(request, 'associated_doctor/assocdoc_dashboard.html', {'account': account})
+    today = timezone.now().date()
+
+    # Weekly income (last 7 days including today) for this associated doctor
+    start_of_week = today - timedelta(days=6)
+    weekly_income = Payment.objects.filter(
+        examination__attending_doctor=account,
+        date__date__gte=start_of_week,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    # Monthly income for this associated doctor
+    start_of_month = today.replace(day=1)
+    monthly_income = Payment.objects.filter(
+        examination__attending_doctor=account,
+        date__date__gte=start_of_month,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    # Weekly patient count (distinct)
+    weekly_patients = Examination.objects.filter(
+        attending_doctor=account,
+        date_created__date__gte=start_of_week
+    ).values('patient').distinct().count()
+
+    # Weekly examination count
+    weekly_examinations = Examination.objects.filter(
+        attending_doctor=account,
+        date_created__date__gte=start_of_week
+    ).count()
+
+    # Date filter for appointments
+    selected_date = request.GET.get('date')
+    try:
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else None
+    except (ValueError, TypeError):
+        selected_date = None
+
+    appointments = Appointment.objects.all().order_by('appointment_date')
+    if selected_date:
+        appointments = appointments.filter(appointment_date=selected_date)
+
+    paginator = Paginator(appointments, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    base_query = f'date={selected_date.strftime("%Y-%m-%d")}' if selected_date else ''
+
+    service_types = ServiceType.objects.all()
+
+    context = {
+        'weekly_income': weekly_income,
+        'monthly_income': monthly_income,
+        'weekly_patients': weekly_patients,
+        'weekly_examinations': weekly_examinations,
+        'appointments': appointments,
+        'service_types': service_types,
+        'account': account,
+        'selected_date': selected_date.strftime('%Y-%m-%d') if selected_date else '',
+        'page_obj': page_obj,
+        'base_query': base_query,
+    }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'associated_doctor/partials/appointments_table.html', context)
+
+    return render(request, 'associated_doctor/assocdoc_dashboard.html', context)
+
+@user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_examination_view(request):
+    # Fetch examinations along with related patient and payment details
+    account = request.user
+    examinations = (
+        Examination.objects.select_related('patient', 'attending_doctor')
+        .prefetch_related('service_types', Prefetch('payment_set'))
+        .filter(attending_doctor=account)  # <-- Restrict to the logged-in associated doctor
+        .order_by('-date_created')
+    )
+     
+    search_query = request.GET.get('search', '').strip()
+    date_filter = request.GET.get('date')
+    
+    # Apply filters first
+    if search_query:
+        examinations = examinations.filter(
+            Q(patient__first_name__icontains=search_query) |
+            Q(patient__last_name__icontains=search_query) |
+            Q(patient__middle_name__icontains=search_query) |
+            Q(patient__id__icontains=search_query)  # Make sure this field is searchable
+        )
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            examinations = examinations.filter(date_created__date=filter_date)
+        except ValueError:
+            pass
+    service_types = ServiceType.objects.all()
+
+    paginator = Paginator(examinations, 10)  # or however many per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'account' : account,
+        'examinations': page_obj,
+        'service_types': service_types,
+        'page_obj' : page_obj,
+        'search_query' : search_query,
+        'date_filter' : date_filter,
+    }
+    return render(request, 'associated_doctor/assocdoc_examination.html', context)
+
+@user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_patients_list_view(request, patient_id=None):
+    account = request.user
+    search_query = request.GET.get('search', '').strip()
+    # Filter patients who have examinations attended by the current doctor
+    patients = Patient.objects.filter(
+        examinations__attending_doctor=account
+    ).distinct().order_by('id')
+    
+    if search_query:
+        patients = patients.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(middle_name__icontains=search_query) |
+            Q(id__icontains=search_query.replace("PID-", ""))
+        )
+
+    paginator = Paginator(patients, 12)  # 12 patients per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    selected_patient = None
+    examinations = None
+
+    if patient_id:
+        selected_patient = get_object_or_404(Patient, id=patient_id)
+        # Fetch only examinations for the selected patient
+        examinations = Examination.objects.filter(
+            patient=selected_patient,
+            attending_doctor=account
+        ).select_related('attending_doctor') \
+         .prefetch_related('service_types', 'payment_set') \
+         .order_by('-date_created')
+        
+    context = {
+        'account': request.user,
+        'service_types': ServiceType.objects.all(),
+        'selected_patient': selected_patient,
+        'examinations': examinations,
+        'page_obj': page_obj,  # Use this in the template
+        'search_query' : search_query,
+    }
+    
+    return render(request, 'associated_doctor/assocdoc_patients_list.html', context)
+
+@user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_document_results_view(request):
+    account = request.user
+    search_query = request.GET.get('search', '').strip()
+    
+    examinations = Examination.objects.filter(
+        edited_document__isnull=False,
+        attending_doctor=account
+    ).order_by('-date_created')
+
+    years = examinations.dates('date_created', 'year', order='DESC')
+
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    selected_day = request.GET.get('day')
+    selected_filter = request.GET.get('filter', 'all')
+
+    documents = Examination.objects.filter(
+    edited_document__isnull=False,
+    attending_doctor=account
+    )
+    months = {}
+    days = {}
+    page_obj = None
+
+    # Search functionality (filters by filename, patient, or doctor)
+    if search_query:
+        documents = [
+            doc for doc in Examination.objects.filter(attending_doctor=account) 
+            if doc.edited_document and search_query.lower() in doc.filename.lower()
+        ]
+        # If it's an AJAX/HTMX request, return only search results
+        if request.headers.get('HX-Request') == 'true':
+            paginator = Paginator(documents, 10)
+            page_number = request.GET.get("page", 1)
+            page_obj = paginator.get_page(page_number)
+            return render(request, 'associated_doctor/partials/search_results.html', {
+                'documents': page_obj,
+                'search_query': search_query,
+            })
+
+    # Year/Month/Day filtering
+    if selected_year:
+        year_int = int(selected_year)
+        documents = documents.filter(date_created__year=year_int)
+        
+        # Only show months that have documents
+        months = {
+            calendar.month_name[i]: documents.filter(date_created__month=i).exists()
+            for i in range(1, 13) if documents.filter(date_created__month=i).exists()
+        }
+
+        if selected_month:
+            month_int = next(i for i, m in enumerate(calendar.month_name) if m == selected_month)
+            documents = documents.filter(date_created__month=month_int)
+            
+            # Only show days that have documents
+            days_in_month = documents.dates('date_created', 'day')
+            days = {day.day: True for day in days_in_month}
+
+            if selected_day:
+                documents = documents.filter(date_created__day=int(selected_day))
+
+    # Pagination
+    paginator = Paginator(documents, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Base query for pagination links (excludes 'page' param)
+    querydict = request.GET.copy()
+    if 'page' in querydict:
+        querydict.pop('page')
+    base_query = urlencode(querydict)
+
+    context = {
+        'years': [y.year for y in years],
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_day': selected_day,
+        'selected_filter': selected_filter,
+        'months': months,
+        'days': days,
+        'documents': documents,
+        'page_obj': page_obj,
+        'account': account,
+        'base_query': base_query,
+        'search_query': search_query,
+        'examinations' : examinations,
+    }
+    return render(request, 'associated_doctor/assocdoc_document_results.html', context)
+

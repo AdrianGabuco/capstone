@@ -165,19 +165,22 @@
         <div class="col-md-4 mb-3">
             <a href="{% url 'admin_patients_list' %}" style="text-decoration: none; color: inherit;">
                 <div class="card p-3">
-                    <p class="font-weight-bold">Daily Total Patient Served</p>
-                    <h2 class="text-primary">{{ daily_patients|default:"0" }}</h2>
+                    <p class="font-weight-bold">Total Patient Served</p>
+                    <h2 class="text-primary">{{ total_patients|default:"0" }}</h2>
                     <small class="text-muted">Click to view patient list</small>
                 </div>
             </a>
         </div>
         
+
+
+        
         <!-- Total Examinations Today Card -->
         <div class="col-md-4 mb-3">
             <a href="{% url 'admin_examination' %}" style="text-decoration: none; color: inherit;">
                 <div class="card p-3">
-                    <p class="font-weight-bold">Total Examinations Today</p>
-                    <h2 class="text-primary">{{ daily_examinations|default:"0" }}</h2>
+                    <p class="font-weight-bold">Total Examinations</p>
+                    <h2 class="text-primary">{{ total_examinations|default:"0" }}</h2>
                     <small class="text-muted">Click to view examinations</small>
                 </div>
             </a>

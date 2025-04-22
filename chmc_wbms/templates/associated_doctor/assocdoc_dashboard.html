@@ -1,10 +1,16 @@
 {% extends 'associated_doctor/assocdoc_base.html' %}
 
-{% block title %}Employee Dashboard{% endblock %}
+{% block title %}Associated Doctor Dashboard{% endblock %}
 
 {% block content %}
 
 <style>
+    .modal-body1 {
+        max-height: 770px;
+        position: relative;
+        flex: 1 1 auto;
+        padding: var(--bs-modal-padding);
+    }
     .modal-dialog {
       width: 800px; /* Set your desired width */
       max-width: 90%; /* Ensure responsiveness */
@@ -14,26 +20,223 @@
       max-height: none; /* Ensure responsiveness */
       overflow: visible;
     }
-  </style>
+    .privacy-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      margin-left: 10px;
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+    }
+    .blur-text {
+      filter: blur(5px);
+      transition: filter 0.3s;
+    }
+    .unblur-text {
+      filter: none;
+      transition: filter 0.3s;
+    }
+
+    .normal-text {
+        letter-spacing: normal;
+        color: inherit;
+        text-shadow: none;
+        transition: all 0.3s;
+      }
+  
+      .special-slots {
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          margin-bottom: 15px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+      }
+  
+      .special-slots .btn-special {
+          position: relative;
+          flex: 1 1 calc(33.333% - 10px);
+          min-width: 120px;
+      }
+  
+      .special-slots .btn-special input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .special-slots .btn-special label {
+          display: block;
+          padding: 10px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+      }
+  
+      .special-slots .btn-special input[type="radio"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .time-slots-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 10px;
+          max-height: 200px;
+          overflow-y: auto;
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+      }
+      
+      .time-slots-container .btn-time {
+          position: relative;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .time-slots-container .btn-time label {
+          display: block;
+          padding: 8px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 0.9rem;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .no-slots-available {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 20px;
+          color: #6c757d;
+      }
+      .action-buttons {
+          display: flex;
+          gap: 5px;
+          justify-content: center;
+      }
+
+      .action-buttons .btn {
+          padding: 0.25rem 0.5rem;
+          font-size: 0.875rem;
+      }
+
+</style>
 
 <div class="container my-4">
     <div class="row text-center">
+        <!-- Daily Total Income Card -->
         <div class="col-md-4 mb-3">
             <div class="card p-3">
-                <p class="font-weight-bold">Total Assigned Patients</p>
-                <h2 class="text-primary">25</h2>
+                <p class="font-weight-bold">Weekly Total Income</p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <h2 id="incomeDisplay" class="text-primary blur-text">₱{{ weekly_income|default:"0" }}</h2>
+                    <i id="togglePrivacy" class="fa-solid fa-eye-slash privacy-toggle text-primary"></i>
+                </div>
+                <small class="text-muted">Click amount to view details</small>
+                <div class="d-none" id="incomeData">
+                    <span data-weekly="{{ weekly_income|default:'0' }}" 
+                          data-monthly="{{ monthly_income|default:'0' }}"></span>
+                </div>
             </div>
         </div>
+        
+        <!-- Daily Total Patient Served Card -->
         <div class="col-md-4 mb-3">
-            <div class="card p-3">
-                <p class="font-weight-bold">Document Results Handled</p>
-                <h2 class="text-primary">8</h2>
-            </div>
+            <a href="{% url 'assocdoc_patients_list' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Weekly Total Patient Served</p>
+                    <h2 class="text-primary">{{ weekly_patients|default:"0" }}</h2>
+                    <small class="text-muted">Click to view patient list</small>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Total Examinations Today Card -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'assocdoc_examination' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Weekly Examinations Today</p>
+                    <h2 class="text-primary">{{ weekly_examinations|default:"0" }}</h2>
+                    <small class="text-muted">Click to view examinations</small>
+                </div>
+            </a>
         </div>
     </div>
 
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-group mb-0">
+            <label for="dateFilter" class="mr-2">Filter by Date:</label>
+            <input type="date" id="dateFilter" class="form-control" 
+                   value="{{ selected_date|date:'Y-m-d' }}" style="width: auto; display: inline-block;">
+            <button id="resetFilter" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times"></i> Reset
+            </button>
+        </div>
+    </div>
 
+    <div id="appointmentsTableContainer">
+        <!-- This will be replaced by the filtered content -->
+        {% include 'associated_doctor/partials/appointments_table.html' %}
+    </div>
+</div>
 
+<!-- Modal for Income Details -->
+<div class="modal fade" id="incomeModal" tabindex="-1" role="dialog" aria-labelledby="incomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incomeModalLabel">Income Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="incomeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">Daily</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="weekly-tab" data-bs-toggle="tab" data-bs-target="#weekly" type="button" role="tab">Weekly</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">Monthly</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="incomeTabsContent">
+                    <div class="tab-pane fade" id="weekly" role="tabpanel">
+                        <h4>Weekly Income: ₱<span id="weeklyIncomeAmount">{{ weekly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this week.</p>
+                    </div>
+                    <div class="tab-pane fade" id="monthly" role="tabpanel">
+                        <h4>Monthly Income: ₱<span id="monthlyIncomeAmount">{{ monthly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this month.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Bootstrap and jQuery JS -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -41,6 +244,83 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function() {
 
+        // Privacy toggle functionality
+        let isBlurred = true;
+        $('#togglePrivacy').click(function() {
+            const incomeDisplay = $('#incomeDisplay');
+            if (isBlurred) {
+                incomeDisplay.removeClass('blur-text').addClass('unblur-text');
+                $(this).removeClass('fa-eye-slash').addClass('fa-eye');
+            } else {
+                incomeDisplay.removeClass('unblur-text').addClass('blur-text');
+                $(this).removeClass('fa-eye').addClass('fa-eye-slash');
+            }
+            isBlurred = !isBlurred;
+        });
 
+        // Income display click handler
+        $('#incomeDisplay').click(function() {
+            if (!isBlurred) {
+                $('#incomeModal').modal('show');
+            }
+        });
+
+        // Set today's date as default in filter
+        const today = new Date().toISOString().split('T')[0];
+        $('#dateFilter').val(today);
+
+        // Filter appointment table on date change
+        $('#dateFilter').change(function() {
+            filterAppointments($(this).val());
+        });
+
+        $('#resetFilter').click(function() {
+            $('#dateFilter').val('');
+            filterAppointments('');
+        });
+
+        // Handle pagination links
+        $(document).on('click', '.page-link', function(e) {
+            e.preventDefault();
+            const url = new URL(this.href);
+            const date = url.searchParams.get('date');
+            const page = url.searchParams.get('page') || 1;
+            filterAppointments(date, page);
+        });
+
+        function filterAppointments(date, page = 1) {
+            const params = new URLSearchParams();
+            if (date) params.append('date', date);
+            if (page > 1) params.append('page', page);
+
+            $.ajax({
+                url: window.location.pathname,
+                data: params.toString(),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                type: 'GET',
+                success: function(data) {
+                    $('#appointmentsTableContainer').html(data);
+                    if (date) {
+                        $('#dateFilter').val(date);
+                    }
+
+                    const newUrl = params.toString()
+                        ? `${window.location.pathname}?${params.toString()}`
+                        : window.location.pathname;
+                    window.history.pushState({}, '', newUrl);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error filtering appointments:", error);
+                    $('#appointmentsTableContainer').html(
+                        '<div class="alert alert-danger">Error loading appointments</div>'
+                    );
+                }
+            });
+        }
+
+    });
+</script>
 {% endblock %}

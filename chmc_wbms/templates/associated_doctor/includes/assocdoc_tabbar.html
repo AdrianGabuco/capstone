@@ -1,16 +1,16 @@
 <div class="container mt-5">
     <ul class="tab-bar">
-      <li class="tab-item-1 {% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}">
-        <a href="{% url 'employee_dashboard' %}" class="tab-link">Home</a>
+      <li class="tab-item-1 {% if request.resolver_match.url_name == 'assocdoc_dashboard' %}active{% endif %}">
+        <a href="{% url 'assocdoc_dashboard' %}" class="tab-link">Home</a>
       </li>
-      <li class="tab-item-2 {% if request.resolver_match.url_name == 'employee_examination' %}active{% endif %}">
-        <a href="{% url 'employee_examination' %}" class="tab-link">Examination</a>
+      <li class="tab-item-2 {% if request.resolver_match.url_name == 'assocdoc_examination' %}active{% endif %}">
+        <a href="{% url 'assocdoc_examination' %}" class="tab-link">Examination</a>
       </li>
-      <li class="tab-item-3 {% if request.resolver_match.url_name == 'employee_patients_list' %}active{% endif %}">
-        <a href="{% url 'employee_patients_list' %}" class="tab-link">Patients List</a>
+      <li class="tab-item-3 {% if request.resolver_match.url_name == 'assocdoc_patients_list' %}active{% endif %}">
+        <a href="{% url 'assocdoc_patients_list' %}" class="tab-link">Patients List</a>
       </li>
-      <li class="tab-item-4 {% if request.resolver_match.url_name == 'document_results' %}active{% endif %}">
-        <a href="{% url 'document_results' %}" class="tab-link">Document Results</a>
+      <li class="tab-item-4 {% if request.resolver_match.url_name == 'assocdoc_document_results' %}active{% endif %}">
+        <a href="{% url 'assocdoc_document_results' %}" class="tab-link">Document Results</a>
       </li>
     </ul>
   </div>

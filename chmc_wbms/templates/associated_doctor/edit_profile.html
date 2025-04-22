@@ -1,0 +1,120 @@
+{% extends 'associated_doctor/assocdoc_base.html' %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+{% load static %}
+{% load widget_tweaks %}
+
+<style>
+    .form-control {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding-left: 15px;
+    }
+    .form-select {
+        border: 2px solid #ccc;
+        border-radius: 4px;
+    }
+    .form-check-input {
+        margin-right: 10px;
+    }
+    .scrollable-section {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Edit Profile</h2>
+    <div class="border rounded p-4" style="max-height: 60vh; overflow-y: auto;">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <!-- Personal Information -->
+            <fieldset class="mb-4">
+                <legend class="h5 mb-2">Personal Information</legend>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name:</label>
+                        {{ form.first_name|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name:</label>
+                        {{ form.last_name|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.prefix.id_for_label }}" class="form-label">Prefix:</label>
+                        {{ form.prefix|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email:</label>
+                        {{ form.email|add_class:"form-control" }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Profile Picture -->
+            <fieldset class="mb-4">
+                <legend class="h5 mb-2">Profile Picture</legend>
+                <div class="mb-3">
+                    <label for="{{ form.image.id_for_label }}" class="form-label">Upload Profile Picture:</label>
+                    {{ form.image|add_class:"form-control-file" }}
+                </div>
+            </fieldset>
+
+            <!-- Change Password -->
+            <fieldset class="mb-4">
+                <legend class="h5 mb-2">Change Password</legend>
+                <div class="form-check mb-3">
+                    <input
+                        type="checkbox"
+                        class="form-check-input"
+                        id="change-password-toggle"
+                        name="change_password"
+                        onchange="togglePasswordFields()"
+                    />
+                    <label class="form-check-label" for="change-password-toggle">Change Password</label>
+                </div>
+
+                <div id="password-fields" class="scrollable-section" style="display: none;">
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">New Password:</label>
+                        {{ form.password|add_class:"form-control" }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.confirm_password.id_for_label }}" class="form-label">Confirm Password:</label>
+                        {{ form.confirm_password|add_class:"form-control" }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Buttons -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-success px-4">Save Changes</button>
+                <a href="{% url 'assocdoc_dashboard' %}" class="btn btn-secondary">Close</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function togglePasswordFields() {
+        const passwordFields = document.getElementById('password-fields');
+        const toggle = document.getElementById('change-password-toggle');
+        if (toggle.checked) {
+            passwordFields.style.display = 'block';
+        } else {
+            passwordFields.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

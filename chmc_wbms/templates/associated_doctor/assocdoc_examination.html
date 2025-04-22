@@ -1,0 +1,368 @@
+{% extends 'associated_doctor/assocdoc_base.html' %}
+
+{% block title %}Assigned Examination{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+  <div class="d-flex align-items-center mb-2 mb-md-0 gap-4">
+    <h2 class="mb-0 me-3">Examination</h2>
+  </div>
+  <div class="fit_right d-flex align-items-center gap-3">
+    <div class="searchdoc border border-primary rounded-3 bg-white">
+      <div class="card-body1">
+        <form method="get" id="filterForm" class="d-flex align-items-center gap-2">
+          <!-- Search Input -->
+          <div class="input-group input-group-sm" style="width: 180px;">
+            <input type="text" 
+                   name="search" 
+                   class="form-control border-primary" 
+                   placeholder="Search..."
+                   value="{{ search_query }}"
+                   style="border-radius: 0.25rem 0 0 0.25rem;">
+            {% if search_query %}
+              <a href="?{% if date_filter %}date={{ date_filter }}{% endif %}" 
+                 class="btn border-start-0 btn-sm"
+                 style="border-radius: 0 0.25rem 0.25rem 0;">
+                <i class="bi bi-x"></i>
+              </a>
+            {% endif %}
+          </div>
+          
+          <!-- Date Filter -->
+          <div class="input-group input-group-sm" style="width: 150px;">
+            <input type="date" 
+                   name="date" 
+                   class="form-control border-primary" 
+                   value="{{ date_filter }}"
+                   style="border-radius: 0.25rem 0 0 0.25rem;">
+            {% if date_filter %}
+              <a href="?{% if search_query %}search={{ search_query }}{% endif %}" 
+                 class="btn border-start-0 btn-sm"
+                 style="border-radius: 0 0.25rem 0.25rem 0;">
+                <i class="bi bi-x"></i>
+              </a>
+            {% endif %}
+          </div>
+          
+          <!-- Submit Button -->
+          <button class="btn btn-primary btn-sm" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="container mb-4">
+  <div class="table-responsive" style="max-height: 569px; position: relative;">
+    <table class="table table-bordered text-center align-middle">
+      <thead class="bg-primary text-white" style="position: sticky; top: 0; z-index: 1020;">
+        <tr>
+          <th>ACTIONS</th>
+          <th>PATIENT ID</th>
+          <th>PATIENT NAME</th>
+          <th>TYPE OF SERVICE</th>
+          <th>EXAMINATION DATE</th>
+          <th>PAYMENT METHOD</th>
+          <th>PAYMENT AMOUNT</th>
+          <th>PAYMENT STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exam in examinations %}
+        <tr>
+          <!-- Actions -->
+          <td>
+            <div class="btn-container">
+              {% if exam.has_edited_document %}
+                <!-- View Document -->
+                <a href="{% url 'view_document' exam.pk %}" class="btnex btn-primary" title="View Document">
+                  <span class="material-symbols-outlined">visibility</span>
+                  <span class="btn-text">View Document</span>
+                </a>
+              {% elif exam.document %}
+                <!-- Download Document -->
+                <a href="{{ exam.document.url }}" target="_blank" class="btnex btn-primary" title="Download Document">
+                  <span class="material-symbols-outlined">download</span>
+                  <span class="btn-text">Download Document</span>
+                </a>
+              {% else %}
+                <span class="no-document">No Document</span>
+              {% endif %}
+          
+              <!-- Upload Edited Document -->
+              <button type="button" class="btnex btn-secondary" onclick="openModal({{ exam.pk }})" title="Upload Edited Document">
+                <span class="material-symbols-outlined">upload</span>
+                <span class="btn-text">Upload Edited Document</span>
+              </button>
+          
+              {% if exam.result_image %}
+                <!-- View Examination Result -->
+                <a href="{{ exam.result_image.url }}" target="_blank" class="btnex btn-success" title="View Examination Result">
+                  <span class="material-symbols-outlined">panorama</span>
+                  <span class="btn-text">View Examination Result</span>
+                </a>
+              {% endif %}
+          
+            </div>
+          </td>
+          <!-- Patient Details -->
+          <td>{{ exam.patient.get_formatted_id }}</td>
+          <td>{{ exam.patient.first_name }} {{ exam.patient.middle_name|default:'' }} {{ exam.patient.last_name }}</td>
+
+          <!-- Service Types -->
+          <td>
+            {% for service in exam.service_types.all %}
+              {{ service.name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+
+          <!-- Examination Date -->
+          <td>{{ exam.date_created|date:"F j, Y, g:i a" }}</td>
+
+          <!-- Payment Details -->
+          <td>
+            {% with exam.payment_set.first as payment %}
+              {{ payment.method|default:"N/A" }}
+            {% endwith %}
+          </td>
+          <td>
+            {% with exam.payment_set.first as payment %}
+              {{ payment.amount|default:"0.00" }}
+            {% endwith %}
+          </td>
+          <td>
+            {% with exam.payment_set.first as payment %}
+              {{ payment.status|default:"No Payment" }}
+            {% endwith %}
+          </td>
+        </tr>
+
+        <!-- Upload Edited Modal -->
+        <div class="modal fade" id="uploadModal-{{ exam.pk }}" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">Upload Edited Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data" action="{% url 'upload_edited_document' exam.pk %}">
+                  {% csrf_token %}
+                  <input type="file" name="edited_document" class="form-control" required>
+                  <button type="submit" class="btn btn-primary mt-3">Upload Document</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center;">No examination records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "associated_doctor/includes/pagination.html" %}
+</div>
+
+<script>
+  // Open the modal
+  function openModal(examId) {
+    var modal = new bootstrap.Modal(document.getElementById('uploadModal-' + examId));
+    modal.show();
+  }
+  function openEditModal(examId) {
+    var modal = new bootstrap.Modal(document.getElementById('editModal-' + examId));
+    modal.show();
+  }
+  function openCameraModal(examId, isChange) {
+  // Set the modal title dynamically
+  const modalTitle = isChange ? "Change Examination Result" : "Upload Examination Result Image";
+  const modalLabel = document.getElementById(`cameraModalLabel-${examId}`);
+  modalLabel.innerText = modalTitle;
+
+  // Initialize and show the modal
+  const modal = new bootstrap.Modal(document.getElementById(`cameraModal-${examId}`));
+  modal.show();
+
+  // Select elements within the current modal context
+  const video = document.getElementById(`video-${examId}`);
+  const canvas = document.getElementById(`canvas-${examId}`);
+  const captureButton = document.getElementById(`captureButton-${examId}`);
+  const resultInput = document.getElementById(`resultInput-${examId}`);
+  const uploadForm = document.getElementById(`uploadForm-${examId}`);
+
+  // Start the webcam stream
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then((stream) => {
+      video.srcObject = stream;
+    })
+    .catch((err) => {
+      console.error("Error accessing camera:", err);
+      alert("Unable to access the camera. Please check permissions.");
+    });
+
+  // Capture button logic
+  captureButton.onclick = () => {
+    // Draw the video frame to the canvas
+    canvas.width = video.videoWidth || 640; // Default width
+    canvas.height = video.videoHeight || 480; // Default height
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert canvas to Base64 and assign to hidden input
+    const imageData = canvas.toDataURL("image/png");
+    resultInput.value = imageData;
+
+    // Show the upload form (if hidden)
+    uploadForm.style.display = "block";
+
+    // Stop the webcam stream when done (optional)
+    const stream = video.srcObject;
+    stream.getTracks().forEach((track) => track.stop());
+  };
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today if no date filter is applied
+    const dateInput = document.querySelector('input[name="date"]');
+    if (!dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+
+    // Handle form submission for both search and date filters
+    const filterForm = document.getElementById('filterForm');
+    const searchInput = document.querySelector('input[name="search"]');
+    const dateFilter = document.querySelector('input[name="date"]');
+    
+    // Clear buttons functionality
+    document.querySelectorAll('.btn-outline-danger').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = this.getAttribute('href');
+        });
+    });
+
+    // Optional: If you want to submit on date change automatically
+    dateFilter.addEventListener('change', function() {
+        filterForm.submit();
+    });
+
+    // Optional: If you want to add debounced search
+    let searchDebounce;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            filterForm.submit();
+        }, 2000); // Adjust delay as needed
+    });
+});
+</script>
+
+<style>
+/* Header Section Styles */
+.d-flex.justify-content-between {
+  gap: 15px;
+}
+
+/* Compact Filter Card Styles */
+.card {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card-body {
+  padding: 0.5rem !important;
+}
+
+.input-group-sm {
+  height: 32px;
+}
+
+.input-group-sm .form-control,
+.input-group-sm .btn {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.input-group-sm .btn-outline-danger {
+  padding: 0 8px;
+}
+
+/* Button Styles */
+.btn-outline-primary {
+  white-space: nowrap;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .d-flex.align-items-center {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .card {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .input-group {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .d-flex.align-items-center {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  h2 {
+    margin-bottom: 10px !important;
+  }
+  
+  #filterForm {
+    width: 100%;
+  }
+  
+  .input-group {
+    margin-bottom: 8px;
+  }
+}
+
+/* Form Control Focus Styles */
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Clear Button Hover Effect */
+.btn-outline-danger:hover {
+  color: #dc3545 !important;
+  background-color: transparent;
+}
+.form-control.border-primary:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-sm > .form-control.border-primary,
+.input-group-sm > .btn.border-primary {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+</style>
+{% endblock %}
