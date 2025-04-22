@@ -1,0 +1,24 @@
+{% for patient in page_obj %}
+<div class="col-md-4 mb-4">
+  <div class="card text-center shadow-sm">
+    {% if patient.image %}
+    <img class="mx-auto d-block" src="{{ patient.image.url }}" alt="Patient Image" width="100" height="100">
+    {% else %}
+    <img class="mx-auto d-block" src="/static/image/profile_ICON.png" alt="Default Profile Icon" width="100" height="100">
+    {% endif %}
+    <div class="card-body">
+      <h5 class="card-title">{{ patient.patient_full_name_last_name_start }}</h5>
+      <p class="card-text text-muted">{{ patient.get_formatted_id }}</p>
+      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#patientModal{{ patient.id }}">
+        View Details
+      </button>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<div class="col-12">
+  {% include "admin/includes/pagination.html" %}
+</div>
+{% endif %}

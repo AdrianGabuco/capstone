@@ -4,52 +4,736 @@
 
 {% block content %}
 
-      <h2>Admin Dashboard</h2>
-      <!-- Dashboard Content for Home -->
-      <div class="d-flex justify-content-around mt-4">
-        <div class="text-center">
-            <i class="bi bi-people-fill icon-large"></i>
-            <h5>Total Clinic User Account</h5>
-            <p>15</p>
-        </div>
-        <div class="text-center">
-            <i class="bi bi-file-earmark-text icon-large"></i>
-            <h5>Total Document Recorded</h5>
-            <p>1,001</p>
-        </div>
-        <div class="text-center">
-            <i class="bi bi-person-check-fill icon-large"></i>
-            <h5>Patient Serve Counter</h5>
-            <p>975</p>
-        </div>
-      </div>
+<style>
+    .modal-body1 {
+        max-height: 770px;
+        position: relative;
+        flex: 1 1 auto;
+        padding: var(--bs-modal-padding);
+    }
+    .modal-dialog {
+      width: 800px; /* Set your desired width */
+      max-width: 90%; /* Ensure responsiveness */
+    }
+    .modal-content.one {
+      height: 560px; /* Set your desired height */
+      max-height: none; /* Ensure responsiveness */
+      overflow: visible;
+    }
+    .privacy-toggle {
+      cursor: pointer;
+      font-size: 1.5rem;
+      margin-left: 10px;
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+    }
+    .blur-text {
+      filter: blur(5px);
+      transition: filter 0.3s;
+    }
+    .unblur-text {
+      filter: none;
+      transition: filter 0.3s;
+    }
 
+    .normal-text {
+        letter-spacing: normal;
+        color: inherit;
+        text-shadow: none;
+        transition: all 0.3s;
+      }
+  
+      .special-slots {
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          margin-bottom: 15px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+      }
+  
+      .special-slots .btn-special {
+          position: relative;
+          flex: 1 1 calc(33.333% - 10px);
+          min-width: 120px;
+      }
+  
+      .special-slots .btn-special input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .special-slots .btn-special label {
+          display: block;
+          padding: 10px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+      }
+  
+      .special-slots .btn-special input[type="radio"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .time-slots-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 10px;
+          max-height: 200px;
+          overflow-y: auto;
+          padding: 10px;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+      }
+      
+      .time-slots-container .btn-time {
+          position: relative;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+  
+      .time-slots-container .btn-time label {
+          display: block;
+          padding: 8px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 5px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 0.9rem;
+      }
+  
+      .time-slots-container .btn-time input[type="checkbox"]:checked + label {
+          background: #0d6efd;
+          color: white;
+          border-color: #0d6efd;
+      }
+  
+      .no-slots-available {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 20px;
+          color: #6c757d;
+      }
+      .action-buttons {
+          display: flex;
+          gap: 5px;
+          justify-content: center;
+      }
 
-        <!-- <div class="stats">
-            <h3>Today's Income: ${{ daily_income }}</h3>
-            <h3>This Week's Income: ${{ weekly_income }}</h3>
-            <h3>This Month's Income: ${{ monthly_income }}</h3>
-            <h3>Today Patients Attended: {{ today_patients }}</h3>
-            <h3>This Week Patients Attended: {{ weekly_patients }}</h3>
+      .action-buttons .btn {
+          padding: 0.25rem 0.5rem;
+          font-size: 0.875rem;
+      }
+
+</style>
+
+<div class="container my-4">
+    <div class="row text-center">
+        <!-- Daily Total Income Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3">
+                <p class="font-weight-bold">Daily Total Income</p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <h2 id="incomeDisplay" class="text-primary blur-text">₱{{ daily_income|default:"0" }}</h2>
+                    <i id="togglePrivacy" class="fa-solid fa-eye-slash privacy-toggle text-primary"></i>
+                </div>
+                <small class="text-muted">Click amount to view details</small>
+                <div class="d-none" id="incomeData">
+                    <span data-daily="{{ daily_income|default:'0' }}" 
+                          data-weekly="{{ weekly_income|default:'0' }}" 
+                          data-monthly="{{ monthly_income|default:'0' }}"></span>
+                </div>
+            </div>
         </div>
-
-        <h2>Today's Appointments</h2>
-        <ul>
-            {% for appointment in today_appointments %}
-                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} at {{ appointment.date|date:"H:i" }}</li>
-            {% empty %}
-                <li>No appointments today.</li>
-            {% endfor %}
-        </ul>
         
-        <h2>All Appointments</h2>
-        <ul>
-            {% for appointment in all_appointments %}
-                <li>{{ appointment.patient.name }} with {{ appointment.doctor.user.username }} on {{ appointment.date|date:"d M Y H:i" }}</li>
-            {% empty %}
-                <li>No appointments found.</li>
-            {% endfor %}
-        </ul> -->
+        <!-- Daily Total Patient Served Card -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'admin_patients_list' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Daily Total Patient Served</p>
+                    <h2 class="text-primary">{{ daily_patients|default:"0" }}</h2>
+                    <small class="text-muted">Click to view patient list</small>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Total Examinations Today Card -->
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'admin_examination' %}" style="text-decoration: none; color: inherit;">
+                <div class="card p-3">
+                    <p class="font-weight-bold">Total Examinations Today</p>
+                    <h2 class="text-primary">{{ daily_examinations|default:"0" }}</h2>
+                    <small class="text-muted">Click to view examinations</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-outline-primary" data-toggle="modal" data-target="#appointmentModal">
+            + Add New Appointment
+        </button>
+        <div class="form-group mb-0">
+            <label for="dateFilter" class="mr-2">Filter by Date:</label>
+            <input type="date" id="dateFilter" class="form-control" 
+                   value="{{ selected_date|date:'Y-m-d' }}" style="width: auto; display: inline-block;">
+            <button id="resetFilter" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <div id="appointmentsTableContainer">
+        <!-- This will be replaced by the filtered content -->
+        {% include 'admin/partials/appointments_table.html' %}
+    </div>
+</div>
+
+<!-- Modal for Income Details -->
+<div class="modal fade" id="incomeModal" tabindex="-1" role="dialog" aria-labelledby="incomeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incomeModalLabel">Income Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="incomeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab">Daily</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="weekly-tab" data-bs-toggle="tab" data-bs-target="#weekly" type="button" role="tab">Weekly</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab">Monthly</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="incomeTabsContent">
+                    <div class="tab-pane fade show active" id="daily" role="tabpanel">
+                        <h4>Daily Income: ₱<span id="dailyIncomeAmount">{{ daily_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed today.</p>
+                    </div>
+                    <div class="tab-pane fade" id="weekly" role="tabpanel">
+                        <h4>Weekly Income: ₱<span id="weeklyIncomeAmount">{{ weekly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this week.</p>
+                    </div>
+                    <div class="tab-pane fade" id="monthly" role="tabpanel">
+                        <h4>Monthly Income: ₱<span id="monthlyIncomeAmount">{{ monthly_income|default:"0" }}</span></h4>
+                        <p>Total income from examinations completed this month.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Adding Appointment -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="appointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalLabel">Schedule Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body1">
+                <form method="post" action="{% url 'admin_dashboard' %}" id="appointmentForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" name="client_name" id="floatingClientName" placeholder="Client Name" required>
+                                <label for="floatingClientName">Client Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" name="appointment_date" id="floatingDate" placeholder="Appointment Date" required>
+                                <label for="floatingDate">Appointment Date</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" name="description" id="floatingDescription" placeholder="Description" style="height: 100px" required></textarea>
+                        <label for="floatingDescription">Description</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type of Service</label>
+                        <div class="row">
+                            {% for service in service_types %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="service_types" value="{{ service.id }}" id="service{{ service.id }}">
+                                    <label class="form-check-label" for="service{{ service.id }}">{{ service.name }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Special Slots</label>
+                        <div class="special-slots">
+                            {% if form.special_slot %}
+                                {% for choice in form.special_slot %}
+                                <div class="btn-special">
+                                    <input type="radio" name="special_slot" id="special_{{ forloop.counter }}" value="{{ choice.data.value }}">
+                                    <label for="special_{{ forloop.counter }}">
+                                        {{ choice.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No special slots available for this date</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Regular Time Slots</label>
+                        <div class="time-slots-container">
+                            {% if form.appointment_time.field.queryset.exists %}
+                                {% for slot in form.appointment_time %}
+                                <div class="btn-time">
+                                    <input type="checkbox" name="appointment_time" id="slot_{{ forloop.counter }}" value="{{ slot.data.value }}">
+                                    <label for="slot_{{ forloop.counter }}">
+                                        {{ slot.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-slots-available">
+                                    No regular time slots available for this date
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_appointment" class="btn btn-primary">Add Appointment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="editAppointmentModal" tabindex="-1" role="dialog" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAppointmentModalLabel">Edit Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body1">
+                <form method="post" action="{% url 'admin_dashboard' %}" id="editAppointmentForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="appointment_id" id="editAppointmentId">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" name="client_name" id="editClientName" placeholder="Client Name" required>
+                                <label for="editClientName">Client Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" name="appointment_date" id="editAppointmentDate" placeholder="Appointment Date" required>
+                                <label for="editAppointmentDate">Appointment Date</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" name="description" id="editDescription" placeholder="Description" style="height: 100px" required></textarea>
+                        <label for="editDescription">Description</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type of Service</label>
+                        <div class="row" id="editServiceTypes">
+                            {% for service in service_types %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input service-type-checkbox" type="checkbox" name="service_types" value="{{ service.id }}" id="editService{{ service.id }}">
+                                    <label class="form-check-label" for="editService{{ service.id }}">{{ service.name }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Special Slots</label>
+                        <div class="special-slots" id="editSpecialSlots">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Regular Time Slots</label>
+                        <div class="time-slots-container" id="editTimeSlots">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="update_appointment" class="btn btn-primary">Update Appointment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this appointment?</p>
+                <form method="post" action="{% url 'admin_dashboard' %}" id="deleteAppointmentForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="appointment_id" id="deleteAppointmentId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="deleteAppointmentForm" name="delete_appointment" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
+<!-- Bootstrap and jQuery JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function() {
+
+        // Privacy toggle functionality
+        let isBlurred = true;
+        $('#togglePrivacy').click(function() {
+            const incomeDisplay = $('#incomeDisplay');
+            if (isBlurred) {
+                incomeDisplay.removeClass('blur-text').addClass('unblur-text');
+                $(this).removeClass('fa-eye-slash').addClass('fa-eye');
+            } else {
+                incomeDisplay.removeClass('unblur-text').addClass('blur-text');
+                $(this).removeClass('fa-eye').addClass('fa-eye-slash');
+            }
+            isBlurred = !isBlurred;
+        });
+        
+        // Income display click handler
+        $('#incomeDisplay').click(function() {
+            if (!isBlurred) {
+                $('#incomeModal').modal('show');
+            }
+        });
+        
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        const today = new Date().toISOString().split('T')[0];
+        $('#dateFilter').val(today);
+    
+    // Handle date filter change
+        $('#dateFilter').change(function() {
+            filterAppointments($(this).val());
+        });
+        
+        $('#resetFilter').click(function() {
+            $('#dateFilter').val('');  // Clear the date input
+            filterAppointments('');    // Pass empty string to show all appointments
+        });
+
+        $(document).on('click', '.page-link', function(e) {
+            e.preventDefault();
+            const url = new URL(this.href);
+            const date = url.searchParams.get('date');
+            const page = url.searchParams.get('page') || 1;
+            filterAppointments(date, page);
+        });
+
+        function filterAppointments(date, page=1) {
+            const params = new URLSearchParams();
+            if (date) params.append('date', date);
+            if (page > 1) params.append('page', page);
+
+            $.ajax({
+            url: window.location.pathname,
+            data: params.toString(),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            type: 'GET',
+            success: function(data) {
+                $('#appointmentsTableContainer').html(data);
+                if (date) {
+                    $('#dateFilter').val(date);
+                }
+                
+                // Update URL without reloading the page
+                const newUrl = params.toString() ? 
+                    `${window.location.pathname}?${params.toString()}` : 
+                    window.location.pathname;
+                window.history.pushState({}, '', newUrl);
+            },
+            error: function(xhr, status, error) {
+                console.error("Error filtering appointments:", error);
+                $('#appointmentsTableContainer').html(
+                    '<div class="alert alert-danger">Error loading appointments</div>'
+                );
+            }
+        });
+    }
+        // Handle pagination clicks (delegated event)
+
+
+        // Handle date change to load available time slots
+        $('#floatingDate').change(function() {
+            const selectedDate = $(this).val();
+            if (!selectedDate) return;
+            
+            // Get today's date in YYYY-MM-DD format
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Validate if selected date is in the past
+            if (selectedDate < today) {
+                alert('Cannot select a date in the past');
+                $(this).val('');
+                $('.time-slots-container').html('<div class="no-slots-available">Select a future date</div>');
+                return;
+            }
+    
+            // Validate if selected date is Sunday (0=Sunday, 6=Saturday)
+            const dateObj = new Date(selectedDate);
+            if (dateObj.getDay() === 0) {  // Sunday
+                alert('Appointments are available Monday to Saturday only');
+                $(this).val('');
+                $('.time-slots-container').html('<div class="no-slots-available">Select Monday-Saturday</div>');
+                return;
+            }
+            
+            // Fetch available time slots via AJAX
+            $.ajax({
+                url: '{% url "get_available_time_slots" %}',
+                data: {
+                    'date': selectedDate,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Received data:", data);  // Debug log
+    
+                    if (data.available_slots && data.available_slots.length > 0) {
+                        let regularHtml = '';
+                        let specialHtml = '';
+
+                        data.available_slots.forEach(function(slot) {
+                            if (slot.is_special) {
+                                specialHtml += `
+                                    <div class="btn-special">
+                                        <input type="radio" name="special_slot" id="special_${slot.id}" value="${slot.special_type}">
+                                        <label for="special_${slot.id}">
+                                            ${slot.special_type === 'MORNING' ? 'Morning (8AM-12PM)' : 
+                                              slot.special_type === 'AFTERNOON' ? 'Afternoon (2PM-5PM)' : 
+                                              'Whole Day (8AM-5PM)'}
+                                        </label>
+                                    </div>
+                                `;
+                            } else {
+                                regularHtml += `
+                                    <div class="btn-time">
+                                        <input type="checkbox" name="appointment_time" 
+                                               id="slot_${slot.id}" value="${slot.id}">
+                                        <label for="slot_${slot.id}">
+                                            ${slot.start_time} - ${slot.end_time}
+                                        </label>
+                                    </div>
+                                `;
+                            }
+                        });
+        
+                        // Update both containers
+                        if (specialHtml) {
+                            $('.special-slots').html(specialHtml);
+                        } else {
+                            $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                        }
+                        
+                        if (regularHtml) {
+                            $('.time-slots-container').html(regularHtml);
+                        } else {
+                            $('.time-slots-container').html('<div class="no-slots-available">No regular slots available</div>');
+                        }
+                    } else {
+                        $('.special-slots').html('<p class="text-muted">No special slots available</p>');
+                        $('.time-slots-container').html('<div class="no-slots-available">No slots available</div>');
+                    }
+                    
+                    // Set up the interaction between special and regular slots
+                    $('input[name="special_slot"]').change(function() {
+                        if ($(this).is(':checked')) {
+                            $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="appointment_time"]').prop('disabled', false);
+                        }
+                    });
+
+                    $('input[name="appointment_time"]').change(function() {
+                        if ($('input[name="appointment_time"]:checked').length > 0) {
+                            $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
+                        } else {
+                            $('input[name="special_slot"]').prop('disabled', false);
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching time slots:", error);
+                    $('.special-slots').html('<p class="text-muted">Error loading slots</p>');
+                    $('.time-slots-container').html('<div class="no-slots-available">Error loading slots</div>');
+                }
+            });
+        });
+        
+        // Form submission validation
+        $('#appointmentForm').submit(function(e) {
+            const hasSpecialSlot = $('input[name="special_slot"]:checked').length > 0;
+            const hasRegularSlots = $('input[name="appointment_time"]:checked').length > 0;
+            
+            if (!hasSpecialSlot && !hasRegularSlots) {
+                e.preventDefault();
+                alert('Please select at least one time slot (either special or regular)');
+                return false;
+            }
+            return true;
+        });
+        $('.edit-appointment').click(function() {
+    const appointmentId = $(this).data('appointment-id');
+    
+    // Fetch appointment details via AJAX
+    $.ajax({
+        url: '{% url "get_appointment_details" %}',
+        data: {
+            'appointment_id': appointmentId,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                // Populate form fields
+                $('#editAppointmentId').val(appointmentId);
+                $('#editClientName').val(data.appointment.client_name);
+                $('#editAppointmentDate').val(data.appointment.appointment_date);
+                $('#editDescription').val(data.appointment.description);
+                
+                // Set service types
+                $('.service-type-checkbox').prop('checked', false);
+                data.appointment.service_types.forEach(function(serviceId) {
+                    $('#editService' + serviceId).prop('checked', true);
+                });
+                
+                // Populate special slots
+                let specialSlotsHtml = '';
+                data.available_special_slots.forEach(function(slot) {
+                    const isSelected = data.current_special_slots.includes(slot.special_type);
+                    specialSlotsHtml += `
+                        <div class="btn-special">
+                            <input type="radio" name="special_slot" id="editSpecial_${slot.special_type}" 
+                                   value="${slot.special_type}" ${isSelected ? 'checked' : ''}>
+                            <label for="editSpecial_${slot.special_type}">
+                                ${slot.special_type === 'MORNING' ? 'Morning (8AM-12PM)' : 
+                                  slot.special_type === 'AFTERNOON' ? 'Afternoon (2PM-5PM)' : 
+                                  'Whole Day (8AM-5PM)'}
+                            </label>
+                        </div>
+                    `;
+                });
+                $('#editSpecialSlots').html(specialSlotsHtml || '<p class="text-muted">No special slots available</p>');
+                
+                // Populate regular time slots
+                let timeSlotsHtml = '';
+                data.available_time_slots.forEach(function(slot) {
+                    const isSelected = data.current_time_slots.includes(slot.id.toString());
+                    timeSlotsHtml += `
+                        <div class="btn-time">
+                            <input type="checkbox" name="appointment_time" 
+                                   id="editSlot_${slot.id}" value="${slot.id}" ${isSelected ? 'checked' : ''}>
+                            <label for="editSlot_${slot.id}">
+                                ${slot.start_time} - ${slot.end_time}
+                            </label>
+                        </div>
+                    `;
+                });
+                $('#editTimeSlots').html(timeSlotsHtml || '<div class="no-slots-available">No regular slots available</div>');
+                
+                // Show the modal
+                $('#editAppointmentModal').modal('show');
+                
+                // Set up the interaction between special and regular slots
+                $('input[name="special_slot"]').change(function() {
+                    if ($(this).is(':checked')) {
+                        $('input[name="appointment_time"]').prop('checked', false).prop('disabled', true);
+                    } else {
+                        $('input[name="appointment_time"]').prop('disabled', false);
+                    }
+                });
+
+                $('input[name="appointment_time"]').change(function() {
+                    if ($('input[name="appointment_time"]:checked').length > 0) {
+                        $('input[name="special_slot"]').prop('checked', false).prop('disabled', true);
+                    } else {
+                        $('input[name="special_slot"]').prop('disabled', false);
+                    }
+                });
+            } else {
+                alert('Error loading appointment details: ' + data.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Error fetching appointment details: ' + error);
+        }
+    });
+});
+
+// Delete Appointment Handler
+$('.delete-appointment').click(function() {
+    const appointmentId = $(this).data('appointment-id');
+    $('#deleteAppointmentId').val(appointmentId);
+    $('#deleteConfirmationModal').modal('show');
+});
+    });
+</script>
 {% endblock %}

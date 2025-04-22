@@ -16,40 +16,62 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from webapp.views import assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, assoc_doc_readings_view, associated_doctors_view, document_results_view, add_examination, search_patients_list, get_available_time_slots, get_appointment_details
+from webapp.views import delete_edited_document_view,delete_patient_view,delete_examination_view, admin_edit_patient,admin_add_examination, admin_document_results_view, admin_examination_view, assocdoc_dashboard_view,edit_patient, edit_examination, upload_examination_result_image, search_patient, verify_document, employee_examination_view, upload_edited_document, view_document, user_login_view, admin_login_view, admin_dashboard_view, admin_logout_view, create_account_view, employee_dashboard_view, patients_list_view, manage_account_view, edit_account_view, delete_account_view, employee_logout_view, edit_profile_view, employee_patients_list_view, document_results_view, add_examination, search_patients_list, get_available_time_slots, get_appointment_details
 from django.conf.urls.static import static
 from django.conf import settings
     
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    #login
     path('', user_login_view, name='user_login'),
     path('admin_login/', admin_login_view, name='admin_login'),
+    #Admin
+    path('admin/', admin.site.urls),
     path('admin_dashboard/', admin_dashboard_view, name='admin_dashboard'),
     path('manage_accounts/', manage_account_view, name='manage_accounts'),
-    path('patients_list/', patients_list_view, name='patients_list'),
-    path('employee_dashboard/', employee_dashboard_view, name='employee_dashboard'),
+    path('patients_list/', patients_list_view, name='admin_patients_list'),
+    path('admin_patients_list/<int:patient_id>/', patients_list_view, name='admin_patients_list_with_id'),
     path('create_account/', create_account_view, name='create_account'),
     path('logout/', admin_logout_view, name='admin_logout'),
+    path('admin_document_results/', admin_document_results_view, name='admin_document_results'),
+    path('admin_examination/', admin_examination_view, name='admin_examination'),
+    path('admin_add_examination/', admin_add_examination, name='admin_add_examination'),
+    path('admin_edit_patient/<int:patient_id>/', admin_edit_patient, name='admin_edit_patient'),
+    path('delete-examination/<int:pk>/', delete_examination_view, name='admin_delete_examination'),
+    path('delete-patient/<int:pk>/', delete_patient_view, name='admin_delete_patient'),
+    path('delete-document/<int:pk>/', delete_edited_document_view, name='delete_edited_document'),
+
+    #Employee
+    path('employee_dashboard/', employee_dashboard_view, name='employee_dashboard'), 
     path('employee_logout/', employee_logout_view, name='employee_logout'),
     path('edit_account/<int:account_id>/', edit_account_view, name='edit_account'),
     path('delete_account/<int:account_id>/', delete_account_view, name='delete_account'),
     path('edit_profile/<int:account_id>/', edit_profile_view, name='edit_profile'),
+
+    #Patients_list
     path('employee_patients_list/', employee_patients_list_view, name='employee_patients_list'),
     path('employee_patients_list/<int:patient_id>/', employee_patients_list_view, name='employee_patients_list_with_id'),
-    path('assoc_doc_readings', assoc_doc_readings_view, name='assoc_doc_readings'),
-    path('associated_doctors/', associated_doctors_view, name='associated_doctors'),
-    path('document_results/', document_results_view, name='document_results'),
+    path('edit_patient/<int:patient_id>/', edit_patient, name='edit_patient'),
+    path('search-patients/', search_patients_list, name='search_patients_list'), 
+
+    #Document Results
+    path('employee_document_results/', document_results_view, name='document_results'),
+
+    #Examination
     path('employee_examination/', employee_examination_view, name='employee_examination'),
     path('add_examination/', add_examination, name='add_examination'),
+    path('search_patient/', search_patient, name='search_patient'), #Add Examination Search
     path('examination/<int:pk>/upload/', upload_edited_document, name='upload_edited_document'),
     path('examination/<int:pk>/view/', view_document, name='view_document'),
-    path('verify-document/', verify_document, name='verify_document'),
-    path('search_patient/', search_patient, name='search_patient'),
     path('upload-result-image/<int:pk>/', upload_examination_result_image, name='upload_examination_result_image'),
     path('edit-examination/<int:pk>/', edit_examination, name='edit_examination'),
-    path('edit_patient/<int:patient_id>/', edit_patient, name='edit_patient'),
+
+    #Authenticity Checker
+    path('verify-document/', verify_document, name='verify_document'),
+    
+    
     path('assocdoc_dashboard/', assocdoc_dashboard_view, name='assocdoc_dashboard'),
-    path('search-patients/', search_patients_list, name='search_patients_list'),
+    
+    #Appointment
     path('get-available-time-slots/', get_available_time_slots, name='get_available_time_slots'),
     path('get-appointment-details/', get_appointment_details, name='get_appointment_details'),
 ]

@@ -95,55 +95,511 @@ def manage_account_view(request):
     return render(request, 'admin/manage_accounts.html', context)
 
 @user_passes_test(lambda u: u.is_superuser)
-def patients_list_view(request):
-    return render(request, 'admin/patients_list.html')
+def patients_list_view(request, patient_id=None):
+    # Get all patients but only fetch the current page's patients
+    patients = Patient.objects.order_by('id')
+    paginator = Paginator(patients, 12)  # 12 patients per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    search_query = request.GET.get('search', '').strip()
+
+    selected_patient = None
+    examinations = None
+
+    if search_query:
+        patients = patients.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(middle_name__icontains=search_query) |
+            Q(id__icontains=search_query.replace("PID-", ""))
+        )
+
+    if patient_id:
+        selected_patient = get_object_or_404(Patient, id=patient_id)
+        # Fetch only examinations for the selected patient
+        examinations = Examination.objects.filter(patient=selected_patient) \
+            .select_related('attending_doctor') \
+            .prefetch_related('service_types', 'payment_set') \
+            .order_by('-date_created')
+
+    context = {
+        'account': request.user,
+        'service_types': ServiceType.objects.all(),
+        'selected_patient': selected_patient,
+        'examinations': examinations,
+        'page_obj': page_obj,  # Use this in the template
+        'search_query' : search_query,
+    }
+    
+    return render(request, 'admin/patients_list.html', context)
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard_view(request):
-    # today = timezone.now()
-    # start_of_week = today - timedelta(days=today.weekday())
-
-    # # Total income by payment method
-    # daily_income_cash = Payment.objects.filter(date__date=today.date(), method='cash').aggregate(total=Sum('amount'))['total'] or 0
-    # daily_income_gcash = Payment.objects.filter(date__date=today.date(), method='gcash').aggregate(total=Sum('amount'))['total'] or 0
-    # weekly_income_cash = Payment.objects.filter(date__gte=start_of_week, method='cash').aggregate(total=Sum('amount'))['total'] or 0
-    # weekly_income_gcash = Payment.objects.filter(date__gte=start_of_week, method='gcash').aggregate(total=Sum('amount'))['total'] or 0
-
-    # # Count total patients attended
-    # # Count total patients for today
-    # today_patients = Patient.objects.count
-
-    # # Count total patients for the week
-    # weekly_patients = Patient.objects.count
-
-    # # Get today's appointments
-    # today_appointments = Appointment.objects.filter(date__date=today.date())
+    account = request.user
+    today = timezone.now().date()
     
-    # # Get all appointments
-    # all_appointments = Appointment.objects.all()
+    # Calculate dashboard metrics using Payment model
+    # Daily income
+    daily_income = Payment.objects.filter(
+        date__date=today,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Weekly income (last 7 days including today)
+    start_of_week = today - timedelta(days=6)
+    weekly_income = Payment.objects.filter(
+        date__date__gte=start_of_week,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Monthly income
+    start_of_month = today.replace(day=1)
+    monthly_income = Payment.objects.filter(
+        date__date__gte=start_of_month,
+        status='Paid'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Count daily patients served (distinct patients)
+    daily_patients = Examination.objects.filter(
+        date_created__date=today
+    ).values('patient').distinct().count()
+    
+    # Count daily examinations
+    daily_examinations = Examination.objects.filter(
+        date_created__date=today
+    ).count()
 
-    # context = {
-    #     'daily_income_cash': daily_income_cash,
-    #     'daily_income_gcash': daily_income_gcash,
-    #     'weekly_income_cash': weekly_income_cash,
-    #     'weekly_income_gcash': weekly_income_gcash,
-    #     'today_patients': today_patients,  # Total distinct patients today
-    #     'weekly_patients': weekly_patients,  # Total distinct patients this week
-    #     'today_appointments': today_appointments,  # Today's appointments
-    #     'all_appointments': all_appointments,  # All appointments
-    # }
+    # Handle date filtering
+    selected_date = request.GET.get('date')
+    try:
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else None
+    except (ValueError, TypeError):
+        selected_date = None
 
-    return render(request, 'admin/admin_dashboard.html')
+    # Base queryset - will be filtered if date is specified
+    appointments = Appointment.objects.all().order_by('appointment_date')
+    
+    # Apply date filter if specific date is selected (not None and not empty string)
+    if selected_date:
+        appointments = appointments.filter(appointment_date=selected_date)
 
+    paginator = Paginator(appointments, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    base_query = ''
+    if selected_date:
+        base_query = f'date={selected_date.strftime("%Y-%m-%d")}'
+
+    service_types = ServiceType.objects.all()
+
+    if request.method == 'POST':
+        # Handle appointment creation
+        if 'add_appointment' in request.POST:
+            form = AppointmentForm(request.POST)
+            if form.is_valid():
+                appointment = form.save(commit=False)
+                appointment.save()
+                form.save_m2m()  # Save service types
+                
+                # Handle time slots
+                time_slot_ids = request.POST.getlist('appointment_time')
+                for slot_id in time_slot_ids:
+                    time_slot = TimeSlot.objects.get(id=slot_id)
+                    AppointmentTimeSlot.objects.create(
+                        appointment=appointment,
+                        time_slot=time_slot,
+                        date=appointment.appointment_date
+                    )
+                
+                # Handle special slot if selected
+                special_slot_type = request.POST.get('special_slot')
+                if special_slot_type:
+                    special_slot = TimeSlot.objects.get(
+                        is_special=True,
+                        special_type=special_slot_type
+                    )
+                    AppointmentTimeSlot.objects.create(
+                        appointment=appointment,
+                        time_slot=special_slot,
+                        date=appointment.appointment_date
+                    )
+                
+                messages.success(request, 'Appointment scheduled successfully.')
+                return redirect('admin_dashboard')
+        
+        # Handle appointment update
+        elif 'update_appointment' in request.POST:
+            appointment_id = request.POST.get('appointment_id')
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+                form = AppointmentForm(request.POST, instance=appointment)
+                if form.is_valid():
+                    updated_appointment = form.save(commit=False)
+                    updated_appointment.save()
+                    form.save_m2m()  # Update service types
+                    
+                    # Clear existing time slots
+                    appointment.appointmenttimeslot_set.all().delete()
+                    
+                    # Add new regular time slots
+                    time_slot_ids = request.POST.getlist('appointment_time')
+                    for slot_id in time_slot_ids:
+                        time_slot = TimeSlot.objects.get(id=slot_id)
+                        AppointmentTimeSlot.objects.create(
+                            appointment=appointment,
+                            time_slot=time_slot,
+                            date=appointment.appointment_date
+                        )
+                    
+                    # Handle special slot if selected
+                    special_slot_type = request.POST.get('special_slot')
+                    if special_slot_type:
+                        special_slot = TimeSlot.objects.get(
+                            is_special=True,
+                            special_type=special_slot_type
+                        )
+                        AppointmentTimeSlot.objects.create(
+                            appointment=appointment,
+                            time_slot=special_slot,
+                            date=appointment.appointment_date
+                        )
+                    
+                    messages.success(request, 'Appointment updated successfully.')
+                    return redirect('admin_dashboard')
+            
+            except Exception as e:
+                messages.error(request, f'Error updating appointment: {str(e)}')
+        
+        # Handle appointment deletion
+        elif 'delete_appointment' in request.POST:
+            appointment_id = request.POST.get('appointment_id')
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+                appointment.delete()
+                messages.success(request, 'Appointment deleted successfully.')
+                return redirect('admin_dashboard')
+            except Appointment.DoesNotExist:
+                messages.error(request, 'Appointment not found')
+            except Exception as e:
+                messages.error(request, f'Error deleting appointment: {str(e)}')
+
+    else:
+        form = AppointmentForm()
+
+    context = {
+        'daily_income': daily_income,
+        'weekly_income': weekly_income,
+        'monthly_income': monthly_income,
+        'daily_patients': daily_patients,
+        'daily_examinations': daily_examinations,
+        'appointments': appointments,
+        'service_types': service_types,
+        'form': form,
+        'account': account,
+        'selected_date': selected_date.strftime('%Y-%m-%d') if selected_date else '',
+        'page_obj': page_obj,
+        'base_query': base_query,
+    }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'admin/partials/appointments_table.html', context)
+
+    return render(request, 'admin/admin_dashboard.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_examination_view(request):
+# Fetch examinations along with related patient and payment details
+    account = request.user
+    examinations = (
+        Examination.objects.select_related('patient', 'attending_doctor')
+        .prefetch_related('service_types', Prefetch('payment_set'))
+        .order_by('-date_created')  # Order by latest examination first
+    )
+     
+    search_query = request.GET.get('search', '').strip()
+    date_filter = request.GET.get('date')
+    
+    # Apply filters first
+    if search_query:
+        examinations = examinations.filter(
+            Q(patient__first_name__icontains=search_query) |
+            Q(patient__last_name__icontains=search_query) |
+            Q(patient__middle_name__icontains=search_query) |
+            Q(patient__id__icontains=search_query)  # Make sure this field is searchable
+        )
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            examinations = examinations.filter(date_created__date=filter_date)
+        except ValueError:
+            pass
+    service_types = ServiceType.objects.all()
+
+    paginator = Paginator(examinations, 10)  # or however many per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'account' : account,
+        'examinations': page_obj,
+        'service_types': service_types,
+        'page_obj' : page_obj,
+        'search_query' : search_query,
+        'date_filter' : date_filter,
+    }
+    return render(request, 'admin/examination.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_document_results_view(request):
+    account = request.user
+    search_query = request.GET.get('search', '').strip()
+    
+    examinations = Examination.objects.all().order_by('-date_created')
+    years = Examination.objects.filter(edited_document__isnull=False).dates('date_created', 'year', order='DESC')
+
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    selected_day = request.GET.get('day')
+    selected_filter = request.GET.get('filter', 'all')
+
+    documents = Examination.objects.filter(edited_document__isnull=False)
+    months = {}
+    days = {}
+    page_obj = None
+
+    # Search functionality (filters by filename, patient, or doctor)
+    if search_query:
+        documents = [
+            doc for doc in Examination.objects.all() 
+            if doc.edited_document and search_query.lower() in doc.filename.lower()
+        ]
+        # If it's an AJAX/HTMX request, return only search results
+        if request.headers.get('HX-Request') == 'true':
+            paginator = Paginator(documents, 10)
+            page_number = request.GET.get("page", 1)
+            page_obj = paginator.get_page(page_number)
+            return render(request, 'admin/partials/search_results.html', {
+                'documents': page_obj,
+                'search_query': search_query,
+            })
+
+    # Year/Month/Day filtering
+    if selected_year:
+        year_int = int(selected_year)
+        documents = documents.filter(date_created__year=year_int)
+        
+        # Only show months that have documents
+        months = {
+            calendar.month_name[i]: documents.filter(date_created__month=i).exists()
+            for i in range(1, 13) if documents.filter(date_created__month=i).exists()
+        }
+
+        if selected_month:
+            month_int = next(i for i, m in enumerate(calendar.month_name) if m == selected_month)
+            documents = documents.filter(date_created__month=month_int)
+            
+            # Only show days that have documents
+            days_in_month = documents.dates('date_created', 'day')
+            days = {day.day: True for day in days_in_month}
+
+            if selected_day:
+                documents = documents.filter(date_created__day=int(selected_day))
+
+    # Pagination
+    paginator = Paginator(documents, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Base query for pagination links (excludes 'page' param)
+    querydict = request.GET.copy()
+    if 'page' in querydict:
+        querydict.pop('page')
+    base_query = urlencode(querydict)
+
+    context = {
+        'years': [y.year for y in years],
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_day': selected_day,
+        'selected_filter': selected_filter,
+        'months': months,
+        'days': days,
+        'documents': documents,
+        'page_obj': page_obj,
+        'account': account,
+        'base_query': base_query,
+        'search_query': search_query,
+        'examinations' : examinations,
+    }
+    return render(request, 'admin/document_results.html', context)
+
+@login_required
+def admin_add_examination(request):
+    account = request.user
+
+    if request.method == 'POST':
+        # Handle patient search (AJAX request)
+        if 'search_patient' in request.POST:
+            search_query = request.POST.get('search_patient', '').strip()
+            # Filter patients by name or ID
+            patients = Patient.objects.filter(
+                Q(first_name__istartswith=search_query) |
+                Q(last_name__istartswith=search_query) |
+                Q(middle_name__istartswith=search_query) |
+                Q(id__icontains=search_query)
+            )
+            # Prepare patient data for JSON response
+            patient_list = [
+                {
+                    'id': patient.id,
+                    'first_name': patient.first_name,
+                    'last_name': patient.last_name,
+                    'middle_name': patient.middle_name or '',
+                    'age': patient.age,
+                    'sex': patient.sex,
+                    'address': patient.address,
+                    'contact_number': patient.contact_number,
+                    'image_url': patient.image.url if patient.image else None,
+                }
+                for patient in patients
+            ]
+            return JsonResponse({'patients': patient_list})
+
+        # Handle form submission for adding an examination
+        form = ExaminationForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                # Check if a patient is selected from the search results
+                patient_id = request.POST.get('patient_id')
+                if patient_id:
+                    patient = get_object_or_404(Patient, id=patient_id)
+                    
+                    # If the patient has an existing image, remove it before adding a new one
+                    if patient.image:
+                        patient.image.delete()
+                    
+                    # Handle the new image from the webcam
+                    image_data = request.POST.get('image')  # Captured image data from the form
+                    if image_data:
+                        # Convert base64 image data to a Django ImageFile
+                        format, imgstr = image_data.split(';base64,')  # Get base64 string
+                        ext = format.split('/')[1]  # Extract file extension (png, jpeg, etc.)
+                        image_data = ContentFile(base64.b64decode(imgstr), name=f"patient_{patient.id}_image.{ext}")
+                        
+                        # Save the new image to the patient instance
+                        patient.image = image_data
+                        patient.save()
+                else:
+                    # Create a new patient if not selected
+                    first_name = form.cleaned_data['first_name']
+                    last_name = form.cleaned_data['last_name']
+                    middle_name = form.cleaned_data['middle_name']
+                    age = form.cleaned_data['age']
+                    sex = form.cleaned_data['sex']
+                    address = form.cleaned_data['address']
+                    contact_number = form.cleaned_data['contact_number']
+
+                    patient = Patient.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        middle_name=middle_name,
+                        age=age,
+                        sex=sex,
+                        address=address,
+                        contact_number=contact_number,
+                    )
+
+                # Create the examination
+                examination = Examination.objects.create(
+                    patient=patient,
+                    attending_doctor=form.cleaned_data['attending_doctor']
+                )
+                examination.service_types.set(form.cleaned_data['service_types'])
+
+                # Create payment record
+                Payment.objects.create(
+                    examination=examination,
+                    method=form.cleaned_data['method'],
+                    amount=form.cleaned_data['amount'],
+                    status=form.cleaned_data['status']
+                )
+
+                # Generate the document
+                generate_examination_document(examination)
+
+                return redirect('admin_examination')  # Redirect to success page
+            except Exception as e:
+                return render(request, 'admin/add_examination.html', {
+                    'form': form,
+                    'account': account,
+                    'error': f"An error occurred: {e}"
+                })
+    else:
+        form = ExaminationForm()
+
+    return render(request, 'admin/add_examination.html', {
+        'form': form,
+        'account': account,
+    })
+
+@login_required
+def admin_edit_patient(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    if request.method == 'POST':
+        form = PatientEditForm(request.POST, request.FILES, instance=patient)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_patients_list_with_id', patient_id=patient.id)  # Redirect after saving changes
+    else:
+        form = PatientEditForm(instance=patient)
+    
+    account = request.user
+    context = {
+        'form': form,
+        'patient': patient,
+        'account': account,
+    }
+    return render(request, 'admin/edit_patient.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_examination_view(request, pk):
+    exam = get_object_or_404(Examination, pk=pk)
+    exam.delete()
+    return redirect('admin_examination')
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_patient_view(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    patient.delete()
+    return redirect('admin_patients_list')
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_edited_document_view(request, pk):
+    exam = get_object_or_404(Examination, pk=pk)
+    if exam.edited_document:
+        exam.edited_document.delete(save=False)  # Delete file from storage
+        exam.edited_document = None
+        exam.save()
+    return redirect(request.META.get('HTTP_REFERER', 'admin_document_results'))
+
+@user_passes_test(lambda u: u.is_superuser)
 def admin_logout_view(request):
     logout(request)  # This logs out the user
     return redirect('admin_login') 
 
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_logout_view(request):
     logout(request)  # This logs out the user
     return redirect('user_login') 
 
+@user_passes_test(lambda u: u.is_associated_doctor)
+def assocdoc_logout_view(request):
+    logout(request)  # This logs out the user
+    return redirect('user_login') 
 
+@user_passes_test(lambda u: u.is_superuser)
 def create_account_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST, request.FILES)  # Include `request.FILES` for file uploads
@@ -496,7 +952,7 @@ def get_appointment_details(request):
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
-@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def edit_account_view(request, account_id):
     account = get_object_or_404(CustomUser, id=account_id)
     form = EditAccountForm(request.POST or None, request.FILES or None, instance=account)
@@ -511,7 +967,7 @@ def edit_account_view(request, account_id):
     
     return render(request, 'admin/edit_account.html', {'form': form, 'account': account})
 
-@login_required
+@user_passes_test(lambda u: u.is_superuser)
 def delete_account_view(request, account_id):
     account = get_object_or_404(CustomUser, id=account_id)
     if request.method == 'POST':
@@ -521,7 +977,7 @@ def delete_account_view(request, account_id):
     
     return render(request, 'admin/delete_account.html', {'account': account})
 
-@login_required
+@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def edit_profile_view(request, account_id):
     account = get_object_or_404(CustomUser, id=account_id)
     form = EditProfileForm(request.POST or None, request.FILES or None, instance=account)
@@ -679,44 +1135,6 @@ def document_results_view(request):
     }
     return render(request, 'employee/document_results.html', context)
 
-
-@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
-def assoc_doc_readings_view(request):
-       account = request.user
-       context = {'account': account}
-       return render(request, 'employee/assoc_doc_readings.html', context)
-
-@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
-def associated_doctors_view(request):
-       account = request.user
-       associated_doctors = CustomUser.objects.filter(is_associated_doctor=True)
-       context = {
-           'account': account,
-           'associated_doctors': associated_doctors
-           }
-       
-       return render(request, 'employee/associated_doctors.html', context)
-
-def add_appointment(request):
-    if request.method == 'POST':
-        form = AppointmentForm(request.POST)
-        if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.save()
-            form.save_m2m()
-            return redirect('employee_dashboard')  # Redirect back to dashboard after saving
-    else:
-        form = AppointmentForm()
-
-    # Get the list of service types to display in the modal
-    service_types = ServiceType.objects.all()
-
-    context = {
-        'form': form,
-        'service_types': service_types,
-    }
-    return render(request, 'employee/add_appointment.html', context)
-
 @user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
 def employee_examination_view(request):
     # Fetch examinations along with related patient and payment details
@@ -761,7 +1179,7 @@ def employee_examination_view(request):
     }
     return render(request, 'employee/examination.html', context)
 
-
+@login_required
 def add_examination(request):
     account = request.user
 
@@ -945,23 +1363,7 @@ def generate_examination_document(examination):
     examination.save()
 
 
-@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
-def edit_document(request, examination_id):
-    account = request.user
-    examination = Examination.objects.get(id=examination_id)
-    
-    # Get the document's URL. Make sure it is an absolute path (i.e., it starts with http:// or https://)
-    document_url = examination.document.url
-
-    # Check if the URL starts with a valid protocol (e.g., 'http://', 'https://')
-    if not document_url.startswith('http'):
-        document_url = request.build_absolute_uri(examination.document.url)
-
-    return render(request, 'employee/edit_document.html', {
-        'account': account,
-        'document_url': document_url
-    })
-
+@login_required
 def upload_edited_document(request, pk):
     examination = get_object_or_404(Examination, pk=pk)
 
@@ -976,7 +1378,13 @@ def upload_edited_document(request, pk):
             # Save the new document
             form.save()
 
-            return redirect('employee_examination')
+            user = request.user
+            if user.is_superuser:
+                return redirect('admin_examination')
+            elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+                return redirect('assocdoc_examination')
+            else:
+                return redirect('employee_examination')
         else:
             return JsonResponse({'message': 'Failed to upload document.'}, status=400)
 
@@ -1006,13 +1414,20 @@ def docx_to_pdf_exact(docx_path):
         # Ensure COM library is uninitialized
         pythoncom.CoUninitialize()
 
+@login_required
 def view_document(request, pk):
 
     examination = get_object_or_404(Examination, pk=pk)
 
     # Ensure an edited document exists
     if not examination.edited_document:
-        return redirect('employee_examination')
+        user = request.user
+        if user.is_superuser:
+            return redirect('admin_examination')
+        elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+            return redirect('assocdoc_examination')
+        else:
+            return redirect('employee_examination')
 
     # Convert .docx to PDF
     try:
@@ -1147,6 +1562,7 @@ def search_patient(request):
 
     return JsonResponse({"patients": []})
 
+@login_required
 def upload_examination_result_image(request, pk):
     if request.method == "POST":
         exam = get_object_or_404(Examination, pk=pk)
@@ -1162,12 +1578,26 @@ def upload_examination_result_image(request, pk):
                         # Save the new image to the patient instance
                 exam.result_image = image_result
                 exam.save()
-                return redirect('employee_examination')
+                user = request.user
+                if user.is_superuser:
+                    return redirect('admin_examination')
+                elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+                    return redirect('assocdoc_examination')
+                else:
+                    return redirect('employee_examination')
         else:
             return JsonResponse({"status": "error", "message": "Invalid data."})
-    return redirect('employee_examination')
+    user = request.user
+    if user.is_superuser:
+        return redirect('admin_examination')
+    elif hasattr(user, 'is_associated_doctor') and user.is_associated_doctor:
+        return redirect('assocdoc_examination')
+    else:
+        return redirect('employee_examination')
 
+@login_required
 def edit_examination(request, pk):
+    account = request.user
     exam = get_object_or_404(Examination, pk=pk)
     payment = exam.payment_set.first()  # Assuming one payment per exam
 
@@ -1196,11 +1626,25 @@ def edit_examination(request, pk):
                 payment.save()
 
             # Use 'next' GET parameter to determine whether to redirect or render
-            next_template = request.GET.get('next_template', 'employee/examination.html')  # Default to 'employee/examination.html'
+            next_template = request.GET.get('next_template')
+            if not next_template:
+                if account.is_superuser:
+                    next_template = 'admin/examination.html'
+                elif hasattr(account, 'is_associated_doctor') and account.is_associated_doctor:
+                    next_template = 'associated_doctor/examination.html'
+                else:
+                    next_template = 'employee/examination.html'
             
             # Check if the next_template is a valid template or return redirect if necessary
-            if next_template == 'employee/examination.html':
-                return render(request, next_template, {'form': form, 'exam': exam, 'PAYMENT_METHODS' : PAYMENT_METHODS})
+            if next_template.endswith('.html'):
+                examinations = Examination.objects.all().order_by('-date_created')
+                return render(request, next_template, {
+                    'form': form, 
+                    'exam': exam,
+                    'account' : account,  
+                    'PAYMENT_METHODS' : PAYMENT_METHODS,
+                    'examinations' : examinations,
+                    })
             else:
                 return redirect(next_template)
         else:
@@ -1215,15 +1659,23 @@ def edit_examination(request, pk):
         'payment_method': payment.method if payment else '',
         'payment_status': payment.status if payment else '',
         'payment_amount': payment.amount if payment else '',
+        
     }
     form = EditExaminationForm(initial=initial_data)
 
     # Use the next_template GET parameter to determine which template to render
-    next_template = request.GET.get('next_template', 'employee/examination.html')  # Default to 'employee/examination.html'
+    next_template = request.GET.get('next_template')
+    if not next_template:
+        if account.is_superuser:
+            next_template = 'admin/admin_examination.html'
+        elif hasattr(account, 'is_associated_doctor') and account.is_associated_doctor:
+            next_template = 'associated_doctor/examination.html'
+        else:
+            next_template = 'employee/examination.html'
 
-    return render(request, next_template, {'form': form, 'exam': exam, 'PAYMENT_METHODS' : PAYMENT_METHODS})
+    return render(request, next_template, {'form': form, 'exam': exam, 'account': account, 'PAYMENT_METHODS' : PAYMENT_METHODS})
 
-@user_passes_test(lambda u: u.is_employee or u.is_clinic_doctor)
+@login_required
 def edit_patient(request, patient_id):
     patient = get_object_or_404(Patient, id=patient_id)
     if request.method == 'POST':
